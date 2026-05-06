@@ -15,7 +15,7 @@ export default function Card({ children, className = '', padding = true, hover =
   return (
     <div
       style={style}
-      className={`relative bg-slate-900/70 backdrop-blur-sm border border-slate-800/70 rounded-xl shadow-xl shadow-black/10 ${padding ? 'p-6' : ''} ${hover ? 'transition-all duration-300 hover:border-slate-700/80 hover:shadow-black/20 hover:-translate-y-0.5' : ''} ${glowClass} ${className}`}
+      className={`relative bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-xl shadow-[0_14px_40px_rgba(2,6,23,0.35)] ${padding ? 'p-6' : ''} ${hover ? 'transition-all duration-300 hover:border-slate-300/20 hover:shadow-[0_20px_48px_rgba(2,6,23,0.45)] hover:-translate-y-0.5' : ''} ${glowClass} ${className}`}
     >
       {children}
     </div>

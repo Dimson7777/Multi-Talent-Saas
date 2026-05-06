@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileStatus, setProfileStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [activeSection, setActiveSection] = useState<'organization' | 'profile' | 'danger'>('organization');
 
   const handleSaveOrg = async (e: FormEvent) => {
     e.preventDefault();
@@ -64,112 +65,144 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Settings</h1>
-        <p className="text-slate-500 text-sm mt-1">Manage your organization and profile</p>
+    <div className="space-y-6 max-w-5xl relative">
+      <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-[720px] h-[210px] bg-indigo-500/[0.05] blur-[90px] rounded-full" />
+
+      <div className="relative z-10 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant="default">Settings</Badge>
+            <Badge variant="default">Account</Badge>
+          </div>
+          <h1 className="text-2xl sm:text-[2rem] font-semibold text-white tracking-[-0.03em]">Workspace Settings</h1>
+          <p className="text-slate-400 text-sm mt-1 font-light">Configure organization identity, personal profile, and sensitive actions.</p>
+        </div>
       </div>
 
-      <Card className="animate-fade-in-up">
-        <CardHeader>
-          <div className="flex items-center gap-2.5">
-            <Building2 className="w-4 h-4 text-slate-500" />
-            <CardTitle>Organization</CardTitle>
-          </div>
-          {!isAdmin && <Badge variant="warning">Admin only</Badge>}
-        </CardHeader>
+      <div className="relative z-10 flex flex-wrap gap-2">
+        <button onClick={() => setActiveSection('organization')} className={`px-3.5 py-2 rounded-lg text-xs font-medium border transition-all duration-200 ${activeSection === 'organization' ? 'bg-blue-500/12 text-blue-200 border-blue-400/30' : 'bg-slate-900/55 text-slate-400 border-white/10 hover:text-slate-200 hover:border-slate-400/30'}`}>
+          Organization
+        </button>
+        <button onClick={() => setActiveSection('profile')} className={`px-3.5 py-2 rounded-lg text-xs font-medium border transition-all duration-200 ${activeSection === 'profile' ? 'bg-blue-500/12 text-blue-200 border-blue-400/30' : 'bg-slate-900/55 text-slate-400 border-white/10 hover:text-slate-200 hover:border-slate-400/30'}`}>
+          Profile
+        </button>
+        {isAdmin && (
+          <button onClick={() => setActiveSection('danger')} className={`px-3.5 py-2 rounded-lg text-xs font-medium border transition-all duration-200 ${activeSection === 'danger' ? 'bg-red-500/12 text-red-300 border-red-400/30' : 'bg-slate-900/55 text-slate-400 border-white/10 hover:text-slate-200 hover:border-slate-400/30'}`}>
+            Danger Zone
+          </button>
+        )}
+      </div>
 
-        <form onSubmit={handleSaveOrg} className="space-y-4">
-          <Input
-            id="org-name"
-            label="Organization Name"
-            value={orgName}
-            onChange={(e) => { setOrgName(e.target.value); setOrgStatus('idle'); }}
-            disabled={!isAdmin}
-          />
-          <Input
-            id="org-id"
-            label="Organization ID"
-            value={currentOrg?.id || ''}
-            disabled
-            hint="This is your unique organization identifier"
-          />
-          {orgStatus === 'success' && (
-            <div className="flex items-center gap-2 text-sm text-emerald-400 animate-fade-in">
-              <Check className="w-4 h-4" />
-              Organization name updated
+      {activeSection === 'organization' && (
+        <Card className="animate-fade-in-up bg-slate-900/50 border-white/10 backdrop-blur-xl">
+          <CardHeader>
+            <div className="flex items-center gap-2.5">
+              <Building2 className="w-4 h-4 text-slate-500" />
+              <CardTitle>Organization</CardTitle>
             </div>
-          )}
-          {orgStatus === 'error' && (
-            <div className="flex items-center gap-2 text-sm text-red-400 animate-fade-in">
-              <AlertTriangle className="w-4 h-4" />
-              Failed to update organization name
-            </div>
-          )}
-          {isAdmin && (
-            <Button type="submit" loading={savingOrg} icon={<Save className="w-4 h-4" />}>
-              Save Organization
-            </Button>
-          )}
-        </form>
-      </Card>
+            {!isAdmin && <Badge variant="warning">Admin only</Badge>}
+          </CardHeader>
 
-      <Card className="animate-fade-in-up stagger-2">
-        <CardHeader>
-          <div className="flex items-center gap-2.5">
-            <User className="w-4 h-4 text-slate-500" />
-            <CardTitle>Profile</CardTitle>
-          </div>
-        </CardHeader>
+          <form onSubmit={handleSaveOrg} className="space-y-4">
+            <Input
+              id="org-name"
+              label="Organization Name"
+              value={orgName}
+              onChange={(e) => { setOrgName(e.target.value); setOrgStatus('idle'); }}
+              disabled={!isAdmin}
+              hint="Displayed in workspace headers and member invites"
+            />
+            <Input
+              id="org-id"
+              label="Organization ID"
+              value={currentOrg?.id || ''}
+              disabled
+              hint="Stable identifier used for integrations"
+            />
+            {orgStatus === 'success' && (
+              <div className="flex items-center gap-2 text-sm text-emerald-400 animate-fade-in">
+                <Check className="w-4 h-4" />
+                Organization name updated
+              </div>
+            )}
+            {orgStatus === 'error' && (
+              <div className="flex items-center gap-2 text-sm text-red-400 animate-fade-in">
+                <AlertTriangle className="w-4 h-4" />
+                Failed to update organization name
+              </div>
+            )}
+            {isAdmin && (
+              <div className="flex justify-end pt-2">
+                <Button type="submit" loading={savingOrg} icon={<Save className="w-4 h-4" />}>
+                  Save Organization
+                </Button>
+              </div>
+            )}
+          </form>
+        </Card>
+      )}
 
-        <form onSubmit={handleSaveProfile} className="space-y-4">
-          <Input
-            id="full-name"
-            label="Full Name"
-            value={fullName}
-            onChange={(e) => { setFullName(e.target.value); setProfileStatus('idle'); }}
-          />
-          <Input
-            id="email"
-            label="Email"
-            value={profile?.email || ''}
-            disabled
-            hint="Email cannot be changed here"
-          />
-          {profileStatus === 'success' && (
-            <div className="flex items-center gap-2 text-sm text-emerald-400 animate-fade-in">
-              <Check className="w-4 h-4" />
-              Profile updated
+      {activeSection === 'profile' && (
+        <Card className="animate-fade-in-up bg-slate-900/50 border-white/10 backdrop-blur-xl">
+          <CardHeader>
+            <div className="flex items-center gap-2.5">
+              <User className="w-4 h-4 text-slate-500" />
+              <CardTitle>Profile</CardTitle>
             </div>
-          )}
-          {profileStatus === 'error' && (
-            <div className="flex items-center gap-2 text-sm text-red-400 animate-fade-in">
-              <AlertTriangle className="w-4 h-4" />
-              Failed to update profile
-            </div>
-          )}
-          <Button type="submit" loading={savingProfile} icon={<Save className="w-4 h-4" />}>
-            Save Profile
-          </Button>
-        </form>
-      </Card>
+          </CardHeader>
 
-      {isAdmin && (
-        <Card className="border-red-500/15 animate-fade-in-up stagger-3">
+          <form onSubmit={handleSaveProfile} className="space-y-4">
+            <Input
+              id="full-name"
+              label="Full Name"
+              value={fullName}
+              onChange={(e) => { setFullName(e.target.value); setProfileStatus('idle'); }}
+              hint="Shown in activity logs and member lists"
+            />
+            <Input
+              id="email"
+              label="Email"
+              value={profile?.email || ''}
+              disabled
+              hint="Email is managed by your authentication provider"
+            />
+            {profileStatus === 'success' && (
+              <div className="flex items-center gap-2 text-sm text-emerald-400 animate-fade-in">
+                <Check className="w-4 h-4" />
+                Profile updated
+              </div>
+            )}
+            {profileStatus === 'error' && (
+              <div className="flex items-center gap-2 text-sm text-red-400 animate-fade-in">
+                <AlertTriangle className="w-4 h-4" />
+                Failed to update profile
+              </div>
+            )}
+            <div className="flex justify-end pt-2">
+              <Button type="submit" loading={savingProfile} icon={<Save className="w-4 h-4" />}>
+                Save Profile
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
+
+      {isAdmin && activeSection === 'danger' && (
+        <Card className="border-red-500/20 bg-red-500/[0.04] backdrop-blur-xl animate-fade-in-up">
           <CardHeader>
             <div className="flex items-center gap-2.5">
               <AlertTriangle className="w-4 h-4 text-red-400" />
-              <CardTitle className="text-red-400">Danger Zone</CardTitle>
+              <CardTitle className="text-red-300">Danger Zone</CardTitle>
             </div>
           </CardHeader>
-          <p className="text-sm text-slate-500 mb-4 leading-relaxed">
-            These actions are irreversible. Please proceed with caution.
+          <p className="text-sm text-slate-400 mb-4 leading-relaxed">
+            Sensitive actions that can affect your workspace. Review carefully before proceeding.
           </p>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 rounded-lg bg-red-500/5 border border-red-500/10">
+            <div className="flex items-center justify-between p-4 rounded-lg bg-red-500/8 border border-red-500/20">
               <div>
                 <p className="text-sm font-medium text-white">Delete Organization</p>
-                <p className="text-xs text-slate-500 mt-0.5">Permanently delete this organization and all associated data</p>
+                <p className="text-xs text-slate-400 mt-0.5">Permanently delete this organization and all associated data.</p>
               </div>
               <Button variant="danger" size="sm" disabled>Delete</Button>
             </div>

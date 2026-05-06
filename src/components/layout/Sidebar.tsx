@@ -4,7 +4,6 @@ import {
   Users,
   CreditCard,
   Settings,
-  ChevronLeft,
   Layers,
   Sparkles,
   X,
@@ -26,35 +25,37 @@ type SidebarProps = {
 };
 
 export default function Sidebar({ mobile = false, onClose }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { currentOrg, isPro } = useOrg();
   const location = useLocation();
+  const expanded = mobile || isExpanded;
 
   return (
     <aside
-      className={`h-screen glass-strong flex flex-col transition-all duration-300 z-40 ${
-        collapsed && !mobile ? 'w-[72px]' : 'w-[260px]'
-      } ${mobile ? 'w-[260px]' : 'fixed left-0 top-0'}`}
+      onMouseEnter={!mobile ? () => setIsExpanded(true) : undefined}
+      onMouseLeave={!mobile ? () => setIsExpanded(false) : undefined}
+      className={`z-40 flex flex-col transition-all duration-300 ${
+        mobile
+          ? 'h-full w-[280px] rounded-none border-r border-white/10 bg-slate-950/85 backdrop-blur-xl shadow-[0_24px_60px_rgba(2,6,23,0.55)]'
+          : `fixed left-5 top-5 bottom-5 ${expanded ? 'w-[224px]' : 'w-[84px]'} rounded-[28px] border border-white/10 bg-slate-950/55 backdrop-blur-xl shadow-[0_24px_80px_rgba(2,6,23,0.55)]`
+      }`}
     >
-      {/* Logo / Org */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-slate-800/40 shrink-0">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/25">
+      <div className={`flex items-center gap-3 ${expanded ? 'px-4' : 'px-3'} h-16 shrink-0 ${mobile ? 'border-b border-slate-800/40' : 'border-b border-white/10'}`}>
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0 shadow-[0_10px_26px_rgba(59,130,246,0.35)]">
           <Layers className="w-4.5 h-4.5 text-white" />
         </div>
-        {(!collapsed || mobile) && (
+
+        {expanded && (
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-white truncate leading-tight">
+            <p className="text-sm font-semibold tracking-[-0.02em] text-white truncate leading-tight">
               {currentOrg?.name || 'Loading...'}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
-              {isPro ? (
-                <Badge variant="pro" dot pulse>Pro</Badge>
-              ) : (
-                <Badge variant="default">Free</Badge>
-              )}
+              {isPro ? <Badge variant="pro" dot pulse>Pro</Badge> : <Badge variant="default">Free</Badge>}
             </div>
           </div>
         )}
+
         {mobile && onClose && (
           <button
             onClick={onClose}
@@ -65,77 +66,62 @@ export default function Sidebar({ mobile = false, onClose }: SidebarProps) {
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {(!collapsed || mobile) && (
+      <nav className={`flex-1 py-4 ${expanded ? 'px-3' : 'px-2.5'} space-y-1 overflow-y-auto`}>
+        {expanded && (
           <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
             Workspace
           </p>
         )}
+
         {navItems.map((item, i) => {
           const isActive =
             location.pathname === item.to ||
             (item.to !== '/dashboard' && location.pathname.startsWith(item.to));
+
           return (
             <NavLink
               key={item.to}
               to={item.to}
               onClick={mobile && onClose ? onClose : undefined}
-              title={collapsed && !mobile ? item.label : undefined}
-              className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative animate-fade-in-up stagger-${i + 1} ${
+              title={!expanded && !mobile ? item.label : undefined}
+              className={`group flex items-center ${expanded ? 'gap-3 px-3.5' : 'justify-center px-0'} py-3 rounded-2xl text-sm font-medium transition-all duration-200 relative animate-fade-in-up stagger-${i + 1} ${
                 isActive
-                  ? 'bg-blue-600/10 text-blue-400'
+                  ? 'text-blue-100 bg-blue-500/[0.10] shadow-[0_0_0_1px_rgba(96,165,250,0.18),0_10px_24px_rgba(37,99,235,0.12)]'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
               }`}
             >
               {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-blue-500 rounded-r-full shadow-sm shadow-blue-500/50" />
+                <div className={`absolute ${expanded ? 'left-0 top-1/2 -translate-y-1/2 w-[2px] h-5' : 'left-1/2 -translate-x-1/2 bottom-1.5 w-5 h-[2px]'} bg-blue-300/80 rounded-full shadow-[0_0_12px_rgba(96,165,250,0.7)]`} />
               )}
+
               <item.icon
                 className={`w-[18px] h-[18px] shrink-0 transition-colors duration-200 ${
                   isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-white'
                 }`}
               />
-              {(!collapsed || mobile) && <span>{item.label}</span>}
+
+              {expanded && <span className="truncate">{item.label}</span>}
             </NavLink>
           );
         })}
       </nav>
 
-      {/* Upgrade CTA for free users */}
-      {!isPro && (!collapsed || mobile) && (
-        <div className="mx-3 mb-3 p-3.5 rounded-xl bg-gradient-to-br from-blue-600/10 to-cyan-600/5 border border-blue-500/15 animate-fade-in-up">
-          <div className="flex items-center gap-2 mb-1.5">
-            <Sparkles className="w-4 h-4 text-blue-400 animate-float" />
-            <span className="text-xs font-semibold text-blue-400">Upgrade to Pro</span>
-          </div>
-          <p className="text-[11px] text-slate-500 leading-relaxed mb-2.5">
-            Unlock unlimited members and advanced features.
-          </p>
+      {!isPro && (
+        <div className={`${expanded ? 'mx-3 mb-3 p-3.5' : 'mx-2.5 mb-3 p-2.5'} rounded-2xl bg-gradient-to-br from-blue-600/10 to-cyan-600/5 border border-blue-500/15 animate-fade-in-up`}>
           <NavLink
             to="/billing"
             onClick={mobile && onClose ? onClose : undefined}
-            className="block w-full text-center px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm shadow-blue-600/20 hover:shadow-blue-500/30"
+            title={!expanded && !mobile ? 'Upgrade to Pro' : undefined}
+            className={`flex items-center ${expanded ? 'gap-2.5 justify-start' : 'justify-center'} text-blue-300 hover:text-white transition-colors`}
           >
-            Upgrade
+            <Sparkles className="w-4 h-4 text-blue-400 animate-float shrink-0" />
+            {expanded && (
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-blue-300">Upgrade to Pro</p>
+                <p className="text-[10px] text-slate-500 truncate">Unlock unlimited members</p>
+              </div>
+            )}
           </NavLink>
-        </div>
-      )}
-
-      {/* Collapse toggle (desktop only) */}
-      {!mobile && (
-        <div className="px-3 py-3 border-t border-slate-800/40">
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-300 hover:bg-slate-800/40 transition-all duration-200 w-full"
-          >
-            <ChevronLeft
-              className={`w-[18px] h-[18px] shrink-0 transition-transform duration-300 ${
-                collapsed ? 'rotate-180' : ''
-              }`}
-            />
-            {!collapsed && <span>Collapse</span>}
-          </button>
         </div>
       )}
     </aside>

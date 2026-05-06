@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
-  Sparkles,
 } from 'lucide-react';
 
 const plans = [
@@ -279,10 +278,39 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Billing</h1>
-        <p className="text-slate-500 text-sm mt-1">Manage your subscription and billing details</p>
+    <div className="space-y-6 relative">
+      <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-[760px] h-[230px] bg-indigo-500/[0.05] blur-[90px] rounded-full" />
+
+      <div className="relative z-10 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant="default">Billing</Badge>
+            <Badge variant={isPro ? 'pro' : 'default'} dot={isPro}>{isPro ? 'Pro' : 'Free'}</Badge>
+            {import.meta.env.DEV && <Badge variant="warning">Test Mode</Badge>}
+          </div>
+          <h1 className="text-2xl sm:text-[2rem] font-semibold text-white tracking-[-0.03em]">Billing & Plans</h1>
+          <p className="text-slate-400 text-sm mt-1 font-light">Manage subscription, usage limits, and Stripe billing actions.</p>
+        </div>
+        {isAdmin && (
+          isPro ? (
+            <Button
+              variant="secondary"
+              icon={<ExternalLink className="w-4 h-4" />}
+              onClick={handleManageBilling}
+              loading={portalStatus === 'loading'}
+            >
+              Manage Subscription
+            </Button>
+          ) : (
+            <Button
+              icon={<ArrowRight className="w-4 h-4" />}
+              onClick={handleUpgrade}
+              loading={checkoutStatus === 'loading'}
+            >
+              Upgrade to Pro
+            </Button>
+          )
+        )}
       </div>
 
       {/* Checkout success banner */}
@@ -331,134 +359,123 @@ export default function BillingPage() {
         </div>
       )}
 
-      {/* Current subscription card */}
-      <Card glow={isPro ? 'blue' : null}>
-        <CardHeader>
-          <div className="flex items-center gap-2.5">
-            <CreditCard className="w-4 h-4 text-slate-500" />
-            <CardTitle>Current Subscription</CardTitle>
-          </div>
-          <Badge variant={isPro ? 'pro' : 'default'} dot pulse={isPro}>
-            {isPro ? 'Pro' : 'Free'}
-          </Badge>
-        </CardHeader>
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-          <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Plan</p>
-            <p className="text-lg font-bold text-white mt-0.5">{isPro ? 'Pro' : 'Free'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Status</p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <div className={`w-2 h-2 rounded-full ${
-                subscription?.status === 'active' ? 'bg-emerald-400 animate-dot-pulse' :
-                subscription?.status === 'past_due' ? 'bg-amber-400' :
-                subscription?.status === 'canceled' ? 'bg-red-400' : 'bg-slate-500'
-              }`} />
-              <p className="text-lg font-bold text-white capitalize">
-                {subscription?.status === 'past_due' ? 'Past Due' :
-                 subscription?.status === 'canceled' ? 'Canceled' :
-                 subscription?.status || 'Active'}
-              </p>
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+        <Card glow={isPro ? 'blue' : null} className="xl:col-span-4 bg-slate-900/50 border-white/10 backdrop-blur-xl">
+          <CardHeader className="mb-4">
+            <div className="flex items-center gap-2.5">
+              <CreditCard className="w-4 h-4 text-slate-500" />
+              <CardTitle>Current Plan</CardTitle>
             </div>
-          </div>
-          {subscription?.current_period_end && isPro && (
+            <Badge variant={isPro ? 'pro' : 'default'} dot pulse={isPro}>{isPro ? 'Pro' : 'Free'}</Badge>
+          </CardHeader>
+          <div className="space-y-4">
             <div>
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Renews</p>
-              <p className="text-lg font-bold text-white mt-0.5">
-                {new Date(subscription.current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-              </p>
+              <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Plan</p>
+              <p className="text-2xl font-semibold text-slate-100 tracking-[-0.02em] mt-1">{isPro ? 'Pro' : 'Free'}</p>
             </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Status</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className={`w-2 h-2 rounded-full ${subscription?.status === 'active' ? 'bg-emerald-400 animate-dot-pulse' : subscription?.status === 'past_due' ? 'bg-amber-400' : subscription?.status === 'canceled' ? 'bg-red-400' : 'bg-slate-500'}`} />
+                <p className="text-sm text-slate-300 capitalize">{subscription?.status === 'past_due' ? 'Past due' : subscription?.status === 'canceled' ? 'Canceled' : subscription?.status || 'Active'}</p>
+              </div>
+            </div>
+            {subscription?.current_period_end && isPro && (
+              <div>
+                <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Renews</p>
+                <p className="text-sm text-slate-200 mt-1">{new Date(subscription.current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card className="xl:col-span-4 bg-gradient-to-br from-blue-600/8 via-slate-900/55 to-cyan-600/8 border-blue-400/20 backdrop-blur-xl" glow={!isPro ? 'blue' : null}>
+          <CardHeader className="mb-4">
+            <div className="flex items-center gap-2.5">
+              <Crown className="w-4 h-4 text-blue-300" />
+              <CardTitle>Pro Plan</CardTitle>
+            </div>
+            <Badge variant="pro" dot>Pro</Badge>
+          </CardHeader>
+          <p className="text-sm text-slate-300 mb-4">Unlock advanced team controls, unlimited seats, and Stripe billing management.</p>
+          <div className="space-y-2.5 mb-5">
+            {plans[1].features.slice(0, 5).map((feature) => (
+              <div key={feature} className="flex items-start gap-2.5">
+                <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                <span className="text-sm text-slate-300">{feature}</span>
+              </div>
+            ))}
+          </div>
+          {isAdmin ? (
+            isPro ? (
+              <Button variant="secondary" fullWidth disabled>Current Plan</Button>
+            ) : (
+              <Button fullWidth icon={<ArrowRight className="w-4 h-4" />} onClick={handleUpgrade} loading={checkoutStatus === 'loading'}>
+                Upgrade to Pro
+              </Button>
+            )
+          ) : (
+            <Button variant="secondary" fullWidth disabled>Admin only</Button>
           )}
-          {isPro && isAdmin && (
-            <div className="ml-auto">
-              <Button
-                variant="secondary"
-                icon={<ExternalLink className="w-4 h-4" />}
-                onClick={handleManageBilling}
-                loading={portalStatus === 'loading'}
-              >
-                Manage Subscription
+        </Card>
+
+        <Card className="xl:col-span-4 bg-slate-900/50 border-white/10 backdrop-blur-xl">
+          <CardHeader className="mb-4">
+            <div className="flex items-center gap-2.5">
+              <Zap className="w-4 h-4 text-cyan-300" />
+              <CardTitle>Usage Limits</CardTitle>
+            </div>
+            <Badge variant="default">{isPro ? 'Unlimited' : 'Metered'}</Badge>
+          </CardHeader>
+          <div className="space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-1.5 text-xs">
+                <span className="text-slate-400">Team members</span>
+                <span className="text-slate-200">{isPro ? `${plans[1].features[0]}` : `${plans[0].features[0]}`}</span>
+              </div>
+              <div className="h-2 rounded-full bg-slate-800/70 border border-white/10 overflow-hidden">
+                <div className={`h-full rounded-full ${isPro ? 'w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-400' : 'w-[72%] bg-gradient-to-r from-blue-500 to-cyan-500'} shadow-[0_0_12px_rgba(59,130,246,0.45)]`} />
+              </div>
+            </div>
+            <div className="text-xs text-slate-500 leading-relaxed">Usage bars are visual summaries. Actual enforcement remains unchanged by your current plan logic.</div>
+          </div>
+        </Card>
+
+        <Card className="xl:col-span-12 bg-slate-900/50 border-white/10 backdrop-blur-xl">
+          <CardHeader className="mb-4">
+            <div className="flex items-center gap-2.5">
+              <CreditCard className="w-4 h-4 text-slate-400" />
+              <CardTitle>Billing Actions</CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={isPro ? 'pro' : 'default'}>{isPro ? 'Pro' : 'Free'}</Badge>
+              {import.meta.env.DEV && <Badge variant="warning">Test Mode</Badge>}
+            </div>
+          </CardHeader>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-4 rounded-lg border border-slate-700/40 bg-slate-800/35">
+              <p className="text-sm font-medium text-slate-200 mb-1">Start Checkout</p>
+              <p className="text-xs text-slate-500 mb-3">Open Stripe Checkout for plan upgrades.</p>
+              <Button fullWidth icon={<ArrowRight className="w-4 h-4" />} onClick={handleUpgrade} loading={checkoutStatus === 'loading'} disabled={!isAdmin || isPro}>
+                {isPro ? 'Current Plan' : 'Upgrade to Pro'}
               </Button>
             </div>
-          )}
-        </div>
-      </Card>
-
-      {/* Plan comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {plans.map((plan, i) => {
-          const isCurrentPlan = (plan.id === 'free' && !isPro) || (plan.id === 'pro' && isPro);
-          const isProPlan = plan.id === 'pro';
-
-          return (
-            <Card
-              key={plan.id}
-              hover
-              glow={isProPlan && !isCurrentPlan ? 'blue' : isCurrentPlan && isProPlan ? 'emerald' : null}
-              className={`relative overflow-hidden animate-fade-in-up ${isProPlan && !isCurrentPlan ? 'border-blue-500/25 bg-gradient-to-br from-blue-600/5 via-slate-900/80 to-cyan-600/5' : isCurrentPlan && isProPlan ? 'border-emerald-500/20 bg-gradient-to-br from-emerald-600/5 via-slate-900/80 to-cyan-600/5' : ''}`}
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              {isProPlan && !isCurrentPlan && (
-                <div className="absolute top-0 right-0 flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-bl-xl">
-                  <Sparkles className="w-3 h-3" />
-                  Popular
-                </div>
-              )}
-
-              {isCurrentPlan && (
-                <div className="absolute top-0 right-0 flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-bl-xl">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Current
-                </div>
-              )}
-
-              <div className="mb-6">
-                <div className="flex items-center gap-2.5 mb-2">
-                  {isProPlan ? <Crown className="w-5 h-5 text-blue-400" /> : <Zap className="w-5 h-5 text-slate-500" />}
-                  <h3 className="text-xl font-bold text-white tracking-tight">{plan.name}</h3>
-                </div>
-                <p className="text-slate-500 text-sm">{plan.description}</p>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-white tracking-tight">{plan.price}</span>
-                  <span className="text-slate-500 text-sm">{plan.period}</span>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 mb-6">
-                {plan.features.map((feature) => (
-                  <div key={feature} className="flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                    <span className="text-sm text-slate-300">{feature}</span>
-                  </div>
-                ))}
-                {plan.limitations.map((limitation) => (
-                  <div key={limitation} className="flex items-start gap-2.5">
-                    <XCircle className="w-4 h-4 text-slate-600 mt-0.5 shrink-0" />
-                    <span className="text-sm text-slate-500">{limitation}</span>
-                  </div>
-                ))}
-              </div>
-
-              {isAdmin ? (
-                isCurrentPlan ? (
-                  <Button variant="secondary" fullWidth disabled>{plan.cta}</Button>
-                ) : (
-                  <Button
-                    fullWidth
-                    icon={isProPlan ? <ArrowRight className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
-                    onClick={handleUpgrade}
-                    loading={checkoutStatus === 'loading'}
-                  >
-                    {plan.cta}
-                  </Button>
-                )
-              ) : (
-                <Button variant="secondary" fullWidth disabled>Admin only</Button>
-              )}
-            </Card>
-          );
-        })}
+            <div className="p-4 rounded-lg border border-slate-700/40 bg-slate-800/35">
+              <p className="text-sm font-medium text-slate-200 mb-1">Manage Subscription</p>
+              <p className="text-xs text-slate-500 mb-3">Open Stripe customer portal.</p>
+              <Button fullWidth variant="secondary" icon={<ExternalLink className="w-4 h-4" />} onClick={handleManageBilling} loading={portalStatus === 'loading'} disabled={!isAdmin || !isPro}>
+                Open Portal
+              </Button>
+            </div>
+            <div className="p-4 rounded-lg border border-slate-700/40 bg-slate-800/35">
+              <p className="text-sm font-medium text-slate-200 mb-1">Role Access</p>
+              <p className="text-xs text-slate-500 mb-3">Billing actions are available to organization admins only.</p>
+              <Button fullWidth variant="secondary" disabled>
+                {isAdmin ? 'Admin Access' : 'Admin only'}
+              </Button>
+            </div>
+          </div>
+        </Card>
       </div>
     </div>
   );

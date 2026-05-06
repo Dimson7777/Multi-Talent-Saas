@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useOrg } from '../contexts/OrgContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -117,12 +118,13 @@ function QuickAction({ icon, label, onClick, color = 'blue' }: {
   return (
     <button
       onClick={onClick}
-      className={`group flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-300 hover:-translate-y-0.5 ${
-        color === 'blue' ? 'bg-blue-500/[0.06] hover:bg-blue-500/10 border border-blue-500/10 hover:border-blue-500/20' :
-        color === 'emerald' ? 'bg-emerald-500/[0.06] hover:bg-emerald-500/10 border border-emerald-500/10 hover:border-emerald-500/20' :
-        'bg-slate-800/40 hover:bg-slate-800/60 border border-slate-700/30 hover:border-slate-700/50'
+      className={`group relative overflow-hidden flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(2,6,23,0.45)] ${
+        color === 'blue' ? 'bg-blue-500/[0.07] hover:bg-blue-500/[0.12] border border-blue-400/20 hover:border-blue-300/35' :
+        color === 'emerald' ? 'bg-emerald-500/[0.07] hover:bg-emerald-500/[0.12] border border-emerald-400/20 hover:border-emerald-300/35' :
+        'bg-slate-800/50 hover:bg-slate-800/70 border border-white/10 hover:border-slate-300/20'
       }`}
     >
+      <span className="pointer-events-none absolute inset-0 quick-shimmer" />
       <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 ${
         color === 'blue' ? 'bg-blue-500/10' :
         color === 'emerald' ? 'bg-emerald-500/10' :
@@ -176,31 +178,72 @@ export default function DashboardPage() {
   const isEmpty = members.length <= 1 && activityLogs.length === 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-[780px] h-[260px] bg-cyan-500/[0.06] blur-[90px] rounded-full" />
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="relative z-10 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant="default">Overview</Badge>
+            <Badge variant={isPro ? 'pro' : 'default'} dot={isPro}>{isPro ? 'Pro' : 'Free'}</Badge>
+          </div>
+          <h1 className="text-2xl sm:text-[2rem] font-semibold tracking-[-0.03em] bg-gradient-to-r from-slate-200 via-white to-slate-400 bg-clip-text text-transparent flex items-center gap-3">
             Command Center
             {isPro && (
               <Badge variant="pro" dot pulse>Pro</Badge>
             )}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            {currentOrg?.name || 'your organization'}
+          <p className="text-slate-400/90 text-sm mt-1 font-light tracking-[0.01em]">
+            Live workspace operations for {currentOrg?.name || 'your organization'}
           </p>
         </div>
         <div className="hidden sm:flex items-center gap-2">
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${
-            subscription?.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15' :
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-md border ${
+            subscription?.status === 'active' ? 'bg-emerald-500/8 text-emerald-300 border-emerald-400/20' :
             subscription?.status === 'past_due' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/15' :
-            'bg-slate-800/60 text-slate-400 border border-slate-700/40'
+            'bg-slate-900/55 text-slate-400 border-slate-600/30'
           }`}>
-            <CircleDot className="w-3 h-3" />
+            <span className="relative flex w-2.5 h-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40" />
+              <CircleDot className="w-3 h-3 -translate-x-[1px] -translate-y-[1px]" />
+            </span>
             {subscription?.status === 'active' ? 'All systems operational' :
              subscription?.status === 'past_due' ? 'Payment past due' : 'Active'}
           </div>
+          <button
+            onClick={() => navigate('/team')}
+            className="relative overflow-hidden inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium bg-blue-600/12 hover:bg-blue-600/20 text-blue-200 border border-blue-400/25 hover:border-blue-300/35 transition-all duration-200"
+          >
+            <span className="pointer-events-none absolute inset-0 quick-shimmer" />
+            <UserPlus className="w-3.5 h-3.5" />
+            Invite Member
+          </button>
         </div>
+      </div>
+
+      {/* KPI row */}
+      <div className="relative z-10 grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          { label: 'Members', value: members.length, icon: <Users className="w-4 h-4 text-blue-300" />, tone: 'blue' },
+          { label: 'Plan', value: isPro ? 'Pro' : 'Free', icon: <Crown className="w-4 h-4 text-violet-300" />, tone: 'violet' },
+          { label: 'Events', value: activityLogs.length, icon: <Activity className="w-4 h-4 text-cyan-300" />, tone: 'cyan' },
+          { label: 'System', value: subscription?.status === 'past_due' ? 'Past Due' : 'Online', icon: <CircleDot className="w-4 h-4 text-emerald-300" />, tone: 'emerald' },
+        ].map((kpi, i) => (
+          <motion.div
+            key={kpi.label}
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.35, ease: 'easeOut', delay: i * 0.05 }}
+            className="rounded-xl border border-white/10 bg-slate-900/55 backdrop-blur-xl p-3.5"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">{kpi.label}</p>
+              <div className="w-7 h-7 rounded-lg bg-slate-800/70 border border-white/10 flex items-center justify-center">{kpi.icon}</div>
+            </div>
+            <p className="text-xl font-semibold tracking-[-0.02em] text-slate-100 mt-2">{kpi.value}</p>
+          </motion.div>
+        ))}
       </div>
 
       {/* Three-column command center layout */}
@@ -209,22 +252,22 @@ export default function DashboardPage() {
         {/* ===== LEFT COLUMN: Workspace Overview ===== */}
         <div className="lg:col-span-3 space-y-4">
           {/* Team Stats */}
-          <div className="p-5 rounded-xl bg-slate-900/70 border border-slate-800/60 backdrop-blur-sm animate-fade-in-up">
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0 }} className="p-5 rounded-xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-4 h-4 text-blue-400" />
-              <h3 className="text-sm font-semibold text-white">Team</h3>
+              <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Team</h3>
               <Badge variant="default" className="ml-auto">{members.length} {isPro ? '' : '/ 5'}</Badge>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="p-3 rounded-lg bg-slate-800/40 border border-slate-700/20">
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider">Admins</p>
+              <div className="p-3 rounded-lg bg-slate-800/35 border border-white/10">
+                <p className="text-[10px] text-slate-400/85 uppercase tracking-[0.12em] font-light">Admins</p>
                 <p className="text-xl font-bold text-white mt-0.5">
                   <AnimatedCounter value={adminCount} delay={100} />
                 </p>
               </div>
-              <div className="p-3 rounded-lg bg-slate-800/40 border border-slate-700/20">
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider">Members</p>
+              <div className="p-3 rounded-lg bg-slate-800/35 border border-white/10">
+                <p className="text-[10px] text-slate-400/85 uppercase tracking-[0.12em] font-light">Members</p>
                 <p className="text-xl font-bold text-white mt-0.5">
                   <AnimatedCounter value={memberCount} delay={200} />
                 </p>
@@ -261,17 +304,17 @@ export default function DashboardPage() {
                 </button>
               )}
             </div>
-          </div>
+          </motion.div>
 
           {/* Plan Card */}
-          <div className={`p-5 rounded-xl border backdrop-blur-sm animate-fade-in-up stagger-2 ${
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.07 }} className={`p-5 rounded-xl border backdrop-blur-xl ${
             isPro
-              ? 'bg-gradient-to-br from-blue-600/8 via-slate-900/70 to-cyan-600/5 border-blue-500/15'
-              : 'bg-slate-900/70 border-slate-800/60'
+              ? 'bg-gradient-to-br from-blue-600/8 via-slate-900/50 to-cyan-600/5 border-white/10'
+              : 'bg-slate-900/50 border-white/10'
           }`}>
             <div className="flex items-center gap-2 mb-3">
               {isPro ? <Crown className="w-4 h-4 text-blue-400" /> : <Zap className="w-4 h-4 text-slate-500" />}
-              <h3 className="text-sm font-semibold text-white">Plan</h3>
+              <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Plan</h3>
               <Badge variant={isPro ? 'pro' : 'default'} className="ml-auto" dot={isPro} pulse={isPro}>
                 {isPro ? 'Pro' : 'Free'}
               </Badge>
@@ -288,21 +331,22 @@ export default function DashboardPage() {
             {!isPro && (
               <button
                 onClick={() => navigate('/billing')}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs font-medium rounded-lg border border-blue-500/15 hover:border-blue-500/25 transition-all duration-200"
+                className="relative overflow-hidden w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-300 text-xs font-medium rounded-lg border border-blue-400/20 hover:border-blue-300/35 transition-all duration-200"
               >
+                <span className="pointer-events-none absolute inset-0 quick-shimmer" />
                 <Sparkles className="w-3.5 h-3.5" />
                 Upgrade to Pro
               </button>
             )}
-          </div>
+          </motion.div>
         </div>
 
         {/* ===== CENTER COLUMN: Activity Timeline ===== */}
         <div className="lg:col-span-6">
-          <div className="p-5 rounded-xl bg-slate-900/70 border border-slate-800/60 backdrop-blur-sm h-full animate-fade-in-up stagger-2">
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.14 }} className="p-5 rounded-xl bg-slate-900/50 border border-white/10 backdrop-blur-xl h-full shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
             <div className="flex items-center gap-2 mb-5">
               <Activity className="w-4 h-4 text-cyan-400" />
-              <h3 className="text-sm font-semibold text-white">Activity Timeline</h3>
+              <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Activity Timeline</h3>
               <Badge variant="default" className="ml-auto">{activityLogs.length}</Badge>
             </div>
 
@@ -310,18 +354,20 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
                 {/* Animated empty state */}
                 <div className="relative mb-5">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-800/60 border border-slate-700/30 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-800/50 border border-white/10 flex items-center justify-center relative z-10">
                     <Activity className="w-7 h-7 text-slate-600 animate-float" />
                   </div>
+                  <span className="absolute inset-0 rounded-2xl sonar-ring" />
+                  <span className="absolute inset-0 rounded-2xl sonar-ring-delay" />
                   <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500/20 border border-blue-500/30 animate-dot-pulse" />
                 </div>
-                <p className="text-sm font-medium text-slate-400 mb-1">No activity yet</p>
-                <p className="text-xs text-slate-600 text-center max-w-[200px]">
+                <p className="text-sm font-medium text-slate-300 mb-1 tracking-[-0.01em]">No activity yet</p>
+                <p className="text-xs text-slate-500 text-center max-w-[230px] font-light leading-relaxed">
                   Actions like inviting members, upgrading plans, and role changes will appear here in real time.
                 </p>
               </div>
             ) : (
-              <div className="space-y-0 relative">
+              <div className="space-y-2 relative">
                 {/* Timeline line */}
                 <div className="absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b from-blue-500/20 via-slate-800/60 to-transparent" />
 
@@ -333,34 +379,35 @@ export default function DashboardPage() {
                     label: log.action.replace(/_/g, ' '),
                   };
                   return (
-                    <div key={log.id} className="flex items-start gap-3 py-3 animate-fade-in-up" style={{ animationDelay: `${i * 40}ms` }}>
-                      <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 z-10 ${config.color}`}>
+                    <div key={log.id} className="flex items-start gap-3 py-2.5 px-3 rounded-lg border border-white/5 bg-slate-900/45 hover:bg-slate-900/70 hover:border-cyan-400/20 transition-all duration-200 animate-fade-in-up" style={{ animationDelay: `${i * 40}ms` }}>
+                      <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 z-10 border border-white/10 ${config.color}`}>
                         {config.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-300">
+                        <p className="text-sm text-slate-300 font-light tracking-[0.005em] leading-relaxed">
                           <span className="font-medium text-white">{p?.full_name || 'System'}</span>{' '}
                           {config.label}
                         </p>
-                        <p className="text-[11px] text-slate-600 mt-0.5">
+                        <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
                           {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
                         </p>
                       </div>
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/75 mt-2 shadow-[0_0_10px_rgba(34,211,238,0.7)]" />
                     </div>
                   );
                 })}
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
 
         {/* ===== RIGHT COLUMN: Quick Actions & Status ===== */}
         <div className="lg:col-span-3 space-y-4">
           {/* Quick Actions */}
-          <div className="p-5 rounded-xl bg-slate-900/70 border border-slate-800/60 backdrop-blur-sm animate-fade-in-up stagger-3">
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.21 }} className="p-5 rounded-xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
             <div className="flex items-center gap-2 mb-4">
               <Rocket className="w-4 h-4 text-blue-400" />
-              <h3 className="text-sm font-semibold text-white">Quick Actions</h3>
+              <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Quick Actions</h3>
             </div>
             <div className="space-y-2.5">
               <QuickAction
@@ -381,13 +428,13 @@ export default function DashboardPage() {
                 onClick={() => navigate('/settings')}
               />
             </div>
-          </div>
+          </motion.div>
 
           {/* Usage / Stats */}
-          <div className="p-5 rounded-xl bg-slate-900/70 border border-slate-800/60 backdrop-blur-sm animate-fade-in-up stagger-4">
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.28 }} className="p-5 rounded-xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-4 h-4 text-cyan-400" />
-              <h3 className="text-sm font-semibold text-white">Usage</h3>
+              <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Usage</h3>
             </div>
 
             {/* Member usage bar */}
@@ -396,12 +443,12 @@ export default function DashboardPage() {
                 <span className="text-xs text-slate-400">Team Members</span>
                 <span className="text-xs font-medium text-white">{members.length}{isPro ? '' : '/5'}</span>
               </div>
-              <div className="h-2 rounded-full bg-slate-800/60 overflow-hidden">
+              <div className="h-2 rounded-full bg-slate-800/70 overflow-hidden border border-white/10">
                 <div
-                  className={`h-full rounded-full transition-all duration-1000 ease-out ${
-                    isPro ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
+                  className={`h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(59,130,246,0.45)] ${
+                    isPro ? 'bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-400' :
                     members.length >= 4 ? 'bg-gradient-to-r from-amber-500 to-amber-400' :
-                    'bg-gradient-to-r from-blue-500 to-blue-400'
+                    'bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500'
                   }`}
                   style={{ width: `${isPro ? 100 : Math.min((members.length / 5) * 100, 100)}%` }}
                 />
@@ -414,10 +461,10 @@ export default function DashboardPage() {
                 <span className="text-xs text-slate-400">Plan Tier</span>
                 <span className="text-xs font-medium text-white">{isPro ? 'Pro' : 'Free'}</span>
               </div>
-              <div className="h-2 rounded-full bg-slate-800/60 overflow-hidden">
+              <div className="h-2 rounded-full bg-slate-800/70 overflow-hidden border border-white/10">
                 <div
-                  className={`h-full rounded-full transition-all duration-1000 ease-out ${
-                    isPro ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-slate-600'
+                  className={`h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(59,130,246,0.45)] ${
+                    isPro ? 'bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-400' : 'bg-slate-600'
                   }`}
                   style={{ width: isPro ? '100%' : '33%' }}
                 />
@@ -430,21 +477,21 @@ export default function DashboardPage() {
                 <span className="text-xs text-slate-400">Recent Events</span>
                 <span className="text-xs font-medium text-white">{activityLogs.length}</span>
               </div>
-              <div className="h-2 rounded-full bg-slate-800/60 overflow-hidden">
+              <div className="h-2 rounded-full bg-slate-800/70 overflow-hidden border border-white/10">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all duration-1000 ease-out"
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(34,211,238,0.45)]"
                   style={{ width: `${Math.min((activityLogs.length / 10) * 100, 100)}%` }}
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Empty state suggestions (shown when team is small) */}
           {isEmpty && (
-            <div className="p-5 rounded-xl bg-gradient-to-br from-blue-600/5 via-slate-900/70 to-cyan-600/5 border border-blue-500/10 animate-fade-in-up stagger-5">
+            <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.35 }} className="p-5 rounded-xl bg-gradient-to-br from-blue-600/5 via-slate-900/50 to-cyan-600/5 border border-white/10 backdrop-blur-xl">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 text-blue-400 animate-float" />
-                <h3 className="text-sm font-semibold text-white">Get Started</h3>
+                <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Get Started</h3>
               </div>
               <p className="text-xs text-slate-500 mb-4 leading-relaxed">
                 Your workspace is ready. Here are some next steps to get the most out of Nexus.
@@ -466,7 +513,7 @@ export default function DashboardPage() {
                   </button>
                 ))}
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

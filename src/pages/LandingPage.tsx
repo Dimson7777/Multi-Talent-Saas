@@ -32,17 +32,21 @@ function useParallax() {
 }
 
 /* ===== Cinematic Intro Hook ===== */
-// phase: 0=dark  1=strike  2=reveal  3=idle
-type IntroPhase = 0 | 1 | 2 | 3;
+// 0=dark  1=flicker  2=strike  3=impact  4=reveal  5=idle
+type IntroPhase = 0 | 1 | 2 | 3 | 4 | 5;
 
 function useCinematicIntro() {
   const [phase, setPhase] = useState<IntroPhase>(0);
   useEffect(() => {
-    // tiny initial pause so the page has painted
-    const t0 = setTimeout(() => setPhase(1), 200);
-    const t1 = setTimeout(() => setPhase(2), 900);
-    const t2 = setTimeout(() => setPhase(3), 2200);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
+    const t0 = setTimeout(() => setPhase(1), 300);   // pre-lightning flicker
+    const t1 = setTimeout(() => setPhase(2), 680);   // lightning strikes
+    const t2 = setTimeout(() => setPhase(3), 1250);  // impact shockwave
+    const t3 = setTimeout(() => setPhase(4), 1950);  // content reveals
+    const t4 = setTimeout(() => setPhase(5), 3600);  // ambient idle
+    return () => {
+      clearTimeout(t0); clearTimeout(t1); clearTimeout(t2);
+      clearTimeout(t3); clearTimeout(t4);
+    };
   }, []);
   return phase;
 }
@@ -148,29 +152,30 @@ function DragonSilhouette2({ className, style }: { className?: string; style?: R
   );
 }
 
-/* ===== Electric Particles ===== */
-function ElectricParticles({ active }: { active: boolean }) {
-  const particles = useMemo(() => Array.from({ length: 36 }).map((_, i) => ({
+/* ===== Ambient Particles ===== */
+function AmbientParticles({ phase }: { phase: number }) {
+  const particles = useMemo(() => Array.from({ length: 26 }).map((_, i) => ({
     id: i,
-    size: Math.random() * 2.5 + 0.8,
+    size: Math.random() * 2.2 + 0.6,
     left: Math.random() * 100,
     top: Math.random() * 100,
-    duration: Math.random() * 7 + 5,
-    delay: Math.random() * 6,
-    sparkDuration: (Math.random() * 1.2 + 0.6).toFixed(2),
-    sparkDelay: (Math.random() * 3).toFixed(2),
-    isElectric: Math.random() > 0.55,
-    isOrange: Math.random() > 0.75,
+    duration: Math.random() * 8 + 6,
+    delay: Math.random() * 7,
+    isCyan: Math.random() > 0.42,
   })), []);
 
+  // phase 0: invisible, phase 1: ghost-faint (pre-boot), phase 2+: normal
+  const wrapperOpacity = phase === 0 ? 0 : phase === 1 ? 0.18 : 1;
+
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div
+      className="absolute inset-0 pointer-events-none overflow-hidden"
+      style={{ opacity: wrapperOpacity, transition: 'opacity 1.4s ease' }}
+    >
       {particles.map((p) => (
         <div
           key={p.id}
-          className={`absolute rounded-full transition-opacity duration-700 ${active ? 'opacity-100' : 'opacity-0'} ${
-            p.isElectric ? 'bg-cyan-300/40' : p.isOrange ? 'bg-orange-400/25' : 'bg-blue-400/30'
-          } animate-float`}
+          className={`absolute rounded-full animate-float ${p.isCyan ? 'bg-cyan-300/30' : 'bg-blue-400/22'}`}
           style={{
             width: p.size,
             height: p.size,
@@ -178,30 +183,25 @@ function ElectricParticles({ active }: { active: boolean }) {
             top: `${p.top}%`,
             animationDuration: `${p.duration}s`,
             animationDelay: `${p.delay}s`,
-            boxShadow: p.isElectric
-              ? `0 0 ${p.size * 3}px rgba(103,232,249,0.6)`
-              : p.isOrange
-              ? `0 0 ${p.size * 2}px rgba(251,146,60,0.4)`
-              : `0 0 ${p.size * 2}px rgba(96,165,250,0.4)`,
+            boxShadow: p.isCyan
+              ? `0 0 ${p.size * 3}px rgba(103,232,249,0.55)`
+              : `0 0 ${p.size * 2.5}px rgba(96,165,250,0.45)`,
           }}
         />
       ))}
-      {/* Rising electric sparks post-strike */}
-      {active && Array.from({ length: 14 }).map((_, i) => (
+      {phase >= 3 && Array.from({ length: 8 }).map((_, i) => (
         <div
           key={`spark-${i}`}
           className="absolute animate-spark-float"
           style={{
-            width: 2,
-            height: Math.random() * 8 + 4,
-            left: `${40 + Math.random() * 20}%`,
-            top: `${45 + Math.random() * 20}%`,
-            background: `linear-gradient(to top, transparent, ${
-              Math.random() > 0.5 ? 'rgba(103,232,249,0.9)' : 'rgba(147,197,253,0.8)'
-            })`,
+            width: 1.5,
+            height: Math.random() * 10 + 5,
+            left: `${43 + Math.random() * 14}%`,
+            top: `${46 + Math.random() * 12}%`,
+            background: 'linear-gradient(to top, transparent, rgba(103,232,249,0.85))',
             borderRadius: 2,
-            animationDuration: `${(Math.random() * 1.2 + 0.8).toFixed(2)}s`,
-            animationDelay: `${(Math.random() * 1.5).toFixed(2)}s`,
+            animationDuration: `${(Math.random() * 0.9 + 0.65).toFixed(2)}s`,
+            animationDelay: `${(Math.random() * 0.6).toFixed(2)}s`,
           }}
         />
       ))}
@@ -210,133 +210,116 @@ function ElectricParticles({ active }: { active: boolean }) {
 }
 
 /* ===== Lightning Bolt SVG ===== */
-function Lightning({ visible }: { visible: boolean }) {
-  if (!visible) return null;
+const BOLT_PATH = 'M70 0 L52 98 L78 93 L42 232 L74 227 L48 348 L80 342 L24 540';
+
+function Lightning({ phase }: { phase: number }) {
+  if (phase < 1) return null;
+  const showBolt = phase >= 2;
+
   return (
     <div
       className="absolute pointer-events-none"
-      style={{
-        left: '50%',
-        top: '-2%',
-        width: 120,
-        height: '65%',
-        zIndex: 5,
-      }}
+      style={{ left: '50%', top: 0, width: 140, height: '65%', zIndex: 5, transform: 'translateX(-50%)' }}
     >
-      {/* Main bolt */}
-      <svg
-        viewBox="0 0 120 500"
-        fill="none"
-        className="absolute inset-0 w-full h-full animate-lightning-strike"
-        style={{ transformOrigin: 'top center', left: 0 }}
-        preserveAspectRatio="none"
-      >
-        <defs>
-          <filter id="lightningBlur">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-          <linearGradient id="lightningGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"  stopColor="#e0f2fe" stopOpacity="1" />
-            <stop offset="30%" stopColor="#7dd3fc" stopOpacity="0.95" />
-            <stop offset="65%" stopColor="#3b82f6" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.2" />
-          </linearGradient>
-          <linearGradient id="lightningGlow" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"  stopColor="#bae6fd" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {/* Outer glow pass */}
-        <path
-          d="M60 0 L42 130 L68 128 L38 280 L74 275 L25 500"
-          stroke="url(#lightningGlow)"
-          strokeWidth="22"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          filter="url(#lightningBlur)"
-          opacity="0.5"
-        />
-        {/* Main bolt path */}
-        <path
-          d="M60 0 L42 130 L68 128 L38 280 L74 275 L25 500"
-          stroke="url(#lightningGrad)"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {/* Branch 1 */}
-        <path
-          d="M68 128 L90 175 L78 178"
-          stroke="#93c5fd"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          opacity="0.7"
-        />
-        {/* Branch 2 */}
-        <path
-          d="M38 280 L12 318 L22 322"
-          stroke="#7dd3fc"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          opacity="0.6"
-        />
-        {/* Branch 3 */}
-        <path
-          d="M74 275 L98 305 L88 308"
-          stroke="#93c5fd"
-          strokeWidth="1"
-          strokeLinecap="round"
-          opacity="0.5"
-        />
-      </svg>
+      {!showBolt && (
+        <div className="absolute top-1 left-1/2 -translate-x-1/2">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="absolute rounded-full animate-boot-flicker"
+              style={{
+                width: 2,
+                height: 2,
+                background: 'rgba(103,232,249,0.8)',
+                top: i * 4,
+                left: (i - 1) * 6,
+                animationDelay: `${i * 55}ms`,
+                boxShadow: '0 0 5px rgba(103,232,249,0.9)',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {showBolt && (
+        <svg
+          viewBox="0 0 140 540"
+          fill="none"
+          className="absolute inset-0 w-full h-full animate-lightning-strike"
+          preserveAspectRatio="none"
+          style={{ transformOrigin: 'top center', left: 0 }}
+        >
+          <defs>
+            <filter id="boltBloom" x="-80%" y="-3%" width="260%" height="106%">
+              <feGaussianBlur stdDeviation="12" />
+            </filter>
+            <filter id="boltMidGlow" x="-45%" y="-3%" width="190%" height="106%">
+              <feGaussianBlur stdDeviation="4.5" result="glow" />
+              <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <linearGradient id="boltGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+              <stop offset="12%" stopColor="#f0f9ff" stopOpacity="0.98" />
+              <stop offset="40%" stopColor="#67e8f9" stopOpacity="0.88" />
+              <stop offset="72%" stopColor="#3b82f6" stopOpacity="0.65" />
+              <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.08" />
+            </linearGradient>
+          </defs>
+          <path d={BOLT_PATH} stroke="#7c3aed" strokeWidth="30" fill="none" opacity="0.07" filter="url(#boltBloom)" />
+          <path d={BOLT_PATH} stroke="#22d3ee" strokeWidth="14" fill="none" opacity="0.22" filter="url(#boltBloom)" />
+          <path d={BOLT_PATH} stroke="url(#boltGrad)" strokeWidth="6" fill="none" opacity="0.62" filter="url(#boltMidGlow)" />
+          <path d={BOLT_PATH} stroke="white" strokeWidth="1.4" fill="none" opacity="0.97" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M78 93 L106 145 L91 149" stroke="#67e8f9" strokeWidth="1.2" opacity="0.72" strokeLinecap="round" fill="none" />
+          <path d="M52 98 L26 148 L40 152" stroke="#a5b4fc" strokeWidth="0.9" opacity="0.62" strokeLinecap="round" fill="none" />
+          <path d="M42 232 L14 282 L28 286" stroke="#7dd3fc" strokeWidth="1" opacity="0.58" strokeLinecap="round" fill="none" />
+          <path d="M74 227 L104 270 L90 274" stroke="#67e8f9" strokeWidth="0.9" opacity="0.52" strokeLinecap="round" fill="none" />
+          <path d="M48 348 L20 390 L35 394" stroke="#93c5fd" strokeWidth="0.7" opacity="0.42" strokeLinecap="round" fill="none" />
+        </svg>
+      )}
     </div>
   );
 }
 
-/* ===== Electric Arcs ===== */
-function ElectricArcs({ visible }: { visible: boolean }) {
-  if (!visible) return null;
+/* ===== Elegant Energy Arcs ===== */
+function ElegantArcs({ visible }: { visible: boolean }) {
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 4 }}>
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 2 }}>
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ opacity: visible ? 1 : 0, transition: 'opacity 2.8s ease' }}
+      >
         <defs>
-          <filter id="arcGlow">
-            <feGaussianBlur stdDeviation="3" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          <filter id="arcSoftBlur" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2.5" />
           </filter>
         </defs>
-        {/* Arc left */}
         <path
-          d="M 680 120 Q 540 240 480 400 Q 450 500 510 560"
-          stroke="#7dd3fc" strokeWidth="1.2" fill="none" opacity="0.55"
-          filter="url(#arcGlow)"
-          className="animate-arc-flicker"
-          style={{ animationDelay: '0s' }}
+          d="M -80 520 C 160 340 520 260 720 460 C 920 660 1100 480 1320 280"
+          stroke="rgba(129,140,248,0.2)"
+          strokeWidth="0.9"
+          fill="none"
+          filter="url(#arcSoftBlur)"
+          className="arc-breath"
         />
-        {/* Arc right */}
         <path
-          d="M 760 120 Q 900 230 950 380 Q 980 490 930 560"
-          stroke="#93c5fd" strokeWidth="1" fill="none" opacity="0.45"
-          filter="url(#arcGlow)"
-          className="animate-arc-flicker"
-          style={{ animationDelay: '0.08s' }}
+          d="M 1520 580 C 1280 400 900 330 720 460 C 540 590 340 560 120 670"
+          stroke="rgba(34,211,238,0.17)"
+          strokeWidth="0.75"
+          fill="none"
+          filter="url(#arcSoftBlur)"
+          className="arc-breath"
+          style={{ animationDelay: '3s' }}
         />
-        {/* Wide arc left */}
         <path
-          d="M 700 140 Q 380 320 340 520 Q 320 620 400 680"
-          stroke="#3b82f6" strokeWidth="0.8" fill="none" opacity="0.3"
-          filter="url(#arcGlow)"
-          className="animate-arc-flicker"
-          style={{ animationDelay: '0.15s' }}
-        />
-        {/* Wide arc right */}
-        <path
-          d="M 740 140 Q 1060 300 1100 500 Q 1120 600 1040 670"
-          stroke="#60a5fa" strokeWidth="0.8" fill="none" opacity="0.3"
-          filter="url(#arcGlow)"
-          className="animate-arc-flicker"
-          style={{ animationDelay: '0.12s' }}
+          d="M 280 -60 C 430 170 590 215 720 195 C 850 175 1020 130 1160 -40"
+          stroke="rgba(167,139,250,0.15)"
+          strokeWidth="0.7"
+          fill="none"
+          filter="url(#arcSoftBlur)"
+          className="arc-breath"
+          style={{ animationDelay: '6s' }}
         />
       </svg>
     </div>
@@ -349,20 +332,27 @@ function ShockwaveRings({ visible }: { visible: boolean }) {
   return (
     <div
       className="absolute pointer-events-none"
-      style={{ left: '50%', top: '42%', zIndex: 3 }}
+      style={{ left: '50%', top: '44%', zIndex: 3 }}
     >
+      {/* Ring 0 — instant inner white flash */}
       <div
-        className="absolute rounded-full border border-blue-400/50 animate-shockwave"
-        style={{ width: 320, height: 160, marginLeft: -160, marginTop: -80 }}
+        className="absolute rounded-full border-2 border-white/50 animate-shockwave"
+        style={{ width: 70, height: 35, marginLeft: -35, marginTop: -17, animationDuration: '0.5s' }}
       />
+      {/* Ring 1 — main cyan expansion */}
       <div
-        className="absolute rounded-full border border-cyan-400/30 animate-shockwave-2"
-        style={{ width: 320, height: 160, marginLeft: -160, marginTop: -80 }}
+        className="absolute rounded-full border border-cyan-400/55 animate-shockwave"
+        style={{ width: 360, height: 180, marginLeft: -180, marginTop: -90 }}
       />
-      {/* Inner bright flash ring */}
+      {/* Ring 2 — wider blue follow */}
       <div
-        className="absolute rounded-full border-2 border-white/20 animate-shockwave"
-        style={{ width: 120, height: 60, marginLeft: -60, marginTop: -30, animationDuration: '0.7s' }}
+        className="absolute rounded-full border border-blue-400/30 animate-shockwave-2"
+        style={{ width: 360, height: 180, marginLeft: -180, marginTop: -90 }}
+      />
+      {/* Ring 3 — outermost faint indigo */}
+      <div
+        className="absolute rounded-full border border-indigo-400/15 animate-shockwave-2"
+        style={{ width: 360, height: 180, marginLeft: -180, marginTop: -90, animationDuration: '2.4s', animationDelay: '0.18s' }}
       />
     </div>
   );
@@ -403,35 +393,30 @@ function Particles() {
 function DataFlowLines() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <svg className="absolute inset-0 w-full h-full">
         <defs>
-          <linearGradient id="flowGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0" />
-            <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="flowGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#f97316" stopOpacity="0" />
-            <stop offset="50%" stopColor="#f97316" stopOpacity="0.1" />
-            <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-          </linearGradient>
+            <linearGradient id="scanGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stopColor="#3b82f6" stopOpacity="0"    />
+              <stop offset="50%"  stopColor="#3b82f6" stopOpacity="0.11" />
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0"    />
+            </linearGradient>
+            <linearGradient id="scanGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stopColor="#22d3ee" stopOpacity="0"    />
+              <stop offset="50%"  stopColor="#22d3ee" stopOpacity="0.07" />
+              <stop offset="100%" stopColor="#22d3ee" stopOpacity="0"    />
+            </linearGradient>
         </defs>
-        {/* Horizontal flow lines */}
-        <line x1="0" y1="30%" x2="100%" y2="30%" stroke="url(#flowGrad1)" strokeWidth="0.5">
-          <animate attributeName="x1" values="-10%;110%" dur="8s" repeatCount="indefinite" />
-          <animate attributeName="x2" values="0%;120%" dur="8s" repeatCount="indefinite" />
+          <line x1="0" y1="32%" x2="100%" y2="32%" stroke="url(#scanGrad1)" strokeWidth="0.5">
+            <animate attributeName="x1" values="-10%;110%" dur="10s" repeatCount="indefinite" />
+            <animate attributeName="x2" values="0%;120%"   dur="10s" repeatCount="indefinite" />
         </line>
-        <line x1="0" y1="55%" x2="100%" y2="55%" stroke="url(#flowGrad2)" strokeWidth="0.5">
-          <animate attributeName="x1" values="110%;-10%" dur="10s" repeatCount="indefinite" />
-          <animate attributeName="x2" values="120%;0%" dur="10s" repeatCount="indefinite" />
+          <line x1="0" y1="60%" x2="100%" y2="60%" stroke="url(#scanGrad2)" strokeWidth="0.4">
+            <animate attributeName="x1" values="110%;-10%" dur="13s" repeatCount="indefinite" />
+            <animate attributeName="x2" values="120%;0%"   dur="13s" repeatCount="indefinite" />
         </line>
-        <line x1="0" y1="75%" x2="100%" y2="75%" stroke="url(#flowGrad1)" strokeWidth="0.3">
-          <animate attributeName="x1" values="-10%;110%" dur="12s" repeatCount="indefinite" />
-          <animate attributeName="x2" values="0%;120%" dur="12s" repeatCount="indefinite" />
-        </line>
-        {/* Diagonal flow */}
-        <line x1="10%" y1="0" x2="90%" y2="100%" stroke="url(#flowGrad1)" strokeWidth="0.3" opacity="0.5">
-          <animate attributeName="opacity" values="0;0.3;0" dur="6s" repeatCount="indefinite" />
+          <line x1="0" y1="80%" x2="100%" y2="80%" stroke="url(#scanGrad1)" strokeWidth="0.3">
+            <animate attributeName="x1" values="-10%;110%" dur="16s" repeatCount="indefinite" />
+            <animate attributeName="x2" values="0%;120%"   dur="16s" repeatCount="indefinite" />
         </line>
       </svg>
     </div>
@@ -490,147 +475,137 @@ function StatusBadge({ icon, label, color }: { icon: React.ReactNode; label: str
   );
 }
 
+type GraphTarget = 'auth' | 'billing' | 'teams' | 'data' | null;
+
+type ConsoleTarget = 'auth' | 'billing' | 'teams' | 'data';
+
 /* ===== Command Topology ===== */
-function CommandTopology({ isMobile = false }: { isMobile?: boolean }) {
+function CommandTopology({
+  isMobile = false,
+  active = true,
+  activeTarget = null,
+}: {
+  isMobile?: boolean;
+  active?: boolean;
+  activeTarget?: ConsoleTarget | null;
+}) {
+  const links = [
+    { target: 'auth' as const, path: 'M130 84 Q 204 118 270 150', color: '#60a5fa' },
+    { target: 'teams' as const, path: 'M410 84 Q 338 118 270 150', color: '#22d3ee' },
+    { target: 'billing' as const, path: 'M130 218 Q 205 184 270 150', color: '#a78bfa' },
+    { target: 'data' as const, path: 'M410 218 Q 338 184 270 150', color: '#34d399' },
+  ];
+
+  const nodes = [
+    { x: 130, y: 84, label: 'AUTH', sub: 'JWT + RLS', target: 'auth' as const, color: '#60a5fa' },
+    { x: 410, y: 84, label: 'TEAMS', sub: 'RBAC', target: 'teams' as const, color: '#22d3ee' },
+    { x: 130, y: 218, label: 'BILLING', sub: 'Stripe', target: 'billing' as const, color: '#a78bfa' },
+    { x: 410, y: 218, label: 'DATA', sub: 'Postgres', target: 'data' as const, color: '#34d399' },
+  ];
+
   return (
-    <div className="relative rounded-[22px] bg-slate-900/40 p-5 sm:p-6 backdrop-blur-xl overflow-hidden shadow-[0_24px_70px_rgba(2,6,23,0.55)]">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.06] via-transparent to-indigo-500/[0.05] pointer-events-none" />
-      <div className="absolute inset-0 pointer-events-none opacity-35" style={{
-        backgroundImage: 'linear-gradient(rgba(30,41,59,0.25) 1px, transparent 1px), linear-gradient(90deg, rgba(30,41,59,0.25) 1px, transparent 1px)',
-        backgroundSize: '26px 26px'
-      }} />
+    <div className="relative rounded-2xl border border-slate-700/30 bg-slate-950/40 p-3 sm:p-4 overflow-hidden">
+      <div
+        className="absolute inset-0 pointer-events-none opacity-35"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(30,41,59,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(30,41,59,0.22) 1px, transparent 1px)',
+          backgroundSize: '22px 22px',
+        }}
+      />
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[220px] rounded-full bg-gradient-to-r from-blue-500/10 via-cyan-500/5 to-indigo-500/10 blur-[70px] pointer-events-none" />
 
-      <div className="relative flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="relative w-2 h-2 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 10px #4ade80' }}>
-            <div className="absolute inset-0 rounded-full bg-emerald-400/50 animate-ping" />
-          </div>
-          <span className="text-xs font-medium tracking-wide text-slate-300">Nexus Core Live</span>
-        </div>
-        <span className="text-[10px] text-slate-500 font-mono tracking-[0.24em]">RT ORCHESTRATOR</span>
-      </div>
+      <svg viewBox="0 0 540 300" className={`relative w-full ${isMobile ? 'h-[220px]' : 'h-[285px]'}`}>
+        <defs>
+          <radialGradient id="consoleCoreGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#818cf8" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#312e81" stopOpacity="0" />
+          </radialGradient>
+        </defs>
 
-      <div className="relative rounded-2xl bg-slate-950/45">
-        <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-r from-blue-500/[0.04] via-transparent to-indigo-500/[0.04]" />
-        <svg viewBox="0 0 540 300" className={`w-full ${isMobile ? 'h-[220px]' : 'h-[270px]'}`}>
-          <defs>
-            <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#818cf8" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#312e81" stopOpacity="0" />
-            </radialGradient>
-            <linearGradient id="linkBlue" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-              <stop offset="50%" stopColor="#60a5fa" stopOpacity="0.75" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.2" />
-            </linearGradient>
-            <linearGradient id="linkOrange" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#f97316" stopOpacity="0.25" />
-              <stop offset="50%" stopColor="#fdba74" stopOpacity="0.75" />
-              <stop offset="100%" stopColor="#f97316" stopOpacity="0.25" />
-            </linearGradient>
-            <linearGradient id="linkGreen" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-              <stop offset="50%" stopColor="#34d399" stopOpacity="0.75" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0.25" />
-            </linearGradient>
-          </defs>
+        <circle cx="270" cy="150" r="94" fill="url(#consoleCoreGlow)" opacity={active ? 0.9 : 0.5}>
+          {active && <animate attributeName="r" values="90;106;90" dur="7s" repeatCount="indefinite" />}
+        </circle>
 
-          {/* breathing background */}
-          <circle cx="270" cy="150" r="96" fill="url(#coreGlow)">
-            <animate attributeName="r" values="92;108;92" dur="8s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.75;0.95;0.75" dur="8s" repeatCount="indefinite" />
-          </circle>
+        {links.map((link) => {
+          const highlighted = activeTarget === link.target;
+          return (
+            <g key={link.target}>
+              <path
+                d={link.path}
+                stroke={link.color}
+                strokeWidth={highlighted ? 2.8 : 1.8}
+                fill="none"
+                opacity={highlighted ? 0.85 : 0.3}
+                style={{ transition: 'all 220ms ease' }}
+              />
+              {!isMobile && active && (
+                <circle r={highlighted ? 2.8 : 2.1} fill={link.color} opacity={highlighted ? 1 : 0.7}>
+                  <animateMotion dur={highlighted ? '2.6s' : '3.8s'} repeatCount="indefinite" path={link.path} />
+                  <animate attributeName="opacity" values="0;1;1;0" dur={highlighted ? '2.6s' : '3.8s'} repeatCount="indefinite" />
+                </circle>
+              )}
+            </g>
+          );
+        })}
 
-          {/* links */}
-          <g opacity="0.9">
-            <path d="M130 84 Q 204 118 270 150" stroke="url(#linkBlue)" strokeWidth="2" fill="none" />
-            <path d="M410 84 Q 338 118 270 150" stroke="url(#linkBlue)" strokeWidth="2" fill="none" />
-            <path d="M130 218 Q 205 184 270 150" stroke="url(#linkOrange)" strokeWidth="2" fill="none" />
-            <path d="M410 218 Q 338 184 270 150" stroke="url(#linkGreen)" strokeWidth="2" fill="none" />
-          </g>
-
-          {/* flowing particles */}
-          {!isMobile && (
-            <>
-              <circle r="2.4" fill="#60a5fa">
-                <animateMotion dur="3.4s" repeatCount="indefinite" path="M130,84 Q204,118 270,150" />
-                <animate attributeName="opacity" values="0;1;1;0" dur="3.4s" repeatCount="indefinite" />
-              </circle>
-              <circle r="2.2" fill="#67e8f9">
-                <animateMotion dur="3.7s" begin="0.8s" repeatCount="indefinite" path="M410,84 Q338,118 270,150" />
-                <animate attributeName="opacity" values="0;1;1;0" dur="3.7s" begin="0.8s" repeatCount="indefinite" />
-              </circle>
-              <circle r="2.3" fill="#fb923c">
-                <animateMotion dur="4s" begin="1.1s" repeatCount="indefinite" path="M130,218 Q205,184 270,150" />
-                <animate attributeName="opacity" values="0;1;1;0" dur="4s" begin="1.1s" repeatCount="indefinite" />
-              </circle>
-              <circle r="2.2" fill="#34d399">
-                <animateMotion dur="3.8s" begin="1.6s" repeatCount="indefinite" path="M410,218 Q338,184 270,150" />
-                <animate attributeName="opacity" values="0;1;1;0" dur="3.8s" begin="1.6s" repeatCount="indefinite" />
-              </circle>
-            </>
-          )}
-
-          {/* side nodes */}
-          {[
-            { x: 130, y: 84,  label: 'AUTH',   sub: 'JWT + RLS', color: '#60a5fa' },
-            { x: 410, y: 84,  label: 'TEAMS',  sub: 'RBAC',      color: '#22d3ee' },
-            { x: 130, y: 218, label: 'BILLING',sub: 'Stripe',    color: '#fb923c' },
-            { x: 410, y: 218, label: 'DATA',   sub: 'Postgres',  color: '#34d399' },
-          ].map((n) => (
+        {nodes.map((n, i) => {
+          const highlighted = activeTarget === n.target;
+          return (
             <g key={n.label}>
-              <circle cx={n.x} cy={n.y} r="29" fill="#0b1220" fillOpacity="0.8" stroke={n.color} strokeOpacity="0.35" />
-              <circle cx={n.x} cy={n.y} r="33" fill="none" stroke={n.color} strokeOpacity="0.2">
-                <animate attributeName="r" values="30;35;30" dur="4.4s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.25;0.05;0.25" dur="4.4s" repeatCount="indefinite" />
+              <circle cx={n.x} cy={n.y} r={highlighted ? 33 : 30} fill="#0b1220" fillOpacity="0.82" stroke={n.color} strokeOpacity={highlighted ? 0.75 : 0.35} />
+              <circle cx={n.x} cy={n.y} r={highlighted ? 39 : 35} fill="none" stroke={n.color} strokeOpacity={highlighted ? 0.45 : 0.16}>
+                {active && <animate attributeName="opacity" values="0.35;0.08;0.35" dur="4.8s" begin={`${i * 0.35}s`} repeatCount="indefinite" />}
               </circle>
               <text x={n.x} y={n.y - 2} textAnchor="middle" fill={n.color} fontSize="8" fontFamily="ui-monospace,monospace" fontWeight="700">{n.label}</text>
-              <text x={n.x} y={n.y + 10} textAnchor="middle" fill="#475569" fontSize="6.4" fontFamily="ui-monospace,monospace">{n.sub}</text>
+              <text x={n.x} y={n.y + 10} textAnchor="middle" fill="#64748b" fontSize="6.4" fontFamily="ui-monospace,monospace">{n.sub}</text>
             </g>
-          ))}
+          );
+        })}
 
-          {/* core node */}
-          <g>
-            <circle cx="270" cy="150" r="44" fill="#0b1220" stroke="#818cf8" strokeOpacity="0.45" />
-            <circle cx="270" cy="150" r="52" fill="none" stroke="#818cf8" strokeOpacity="0.28">
-              <animate attributeName="r" values="48;58;48" dur="5s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.35;0.08;0.35" dur="5s" repeatCount="indefinite" />
-            </circle>
-            <text x="270" y="146" textAnchor="middle" fill="#c4b5fd" fontSize="11" fontFamily="ui-monospace,monospace" fontWeight="700">NEXUS CORE</text>
-            <text x="270" y="160" textAnchor="middle" fill="#64748b" fontSize="6.8" fontFamily="ui-monospace,monospace">ORCHESTRATION LAYER</text>
-          </g>
-        </svg>
-      </div>
+        <g>
+          <circle cx="270" cy="150" r="44" fill="#0b1220" stroke="#818cf8" strokeOpacity="0.52" />
+          <circle cx="270" cy="150" r="53" fill="none" stroke="#818cf8" strokeOpacity="0.3">
+            {active && <animate attributeName="r" values="49;58;49" dur="5.6s" repeatCount="indefinite" />}
+          </circle>
+          <text x="270" y="146" textAnchor="middle" fill="#c4b5fd" fontSize="11" fontFamily="ui-monospace,monospace" fontWeight="700">NEXUS CORE</text>
+          <text x="270" y="160" textAnchor="middle" fill="#64748b" fontSize="6.8" fontFamily="ui-monospace,monospace">ORCHESTRATION LAYER</text>
+        </g>
+      </svg>
     </div>
   );
 }
 
 /* ===== Activity Feed ===== */
-function ActivityFeed({ isMobile = false }: { isMobile?: boolean }) {
+function ActivityFeed({ isMobile = false, active = true }: { isMobile?: boolean; active?: boolean }) {
   const events = useMemo(() => ([
-    { color: 'blue',    msg: 'Session authenticated', org: 'acme-corp',  age: 0 },
-    { color: 'cyan',    msg: 'Team member invited',   org: 'startupxyz', age: 2 },
-    { color: 'orange',  msg: 'Subscription synced',   org: 'growthco',   age: 7 },
-    { color: 'emerald', msg: 'Policy check passed',   org: 'nexus-dev',  age: 14 },
+    { color: 'blue', msg: 'Session authenticated', org: 'acme-corp', age: 0 },
+    { color: 'cyan', msg: 'Role policy refreshed', org: 'startupxyz', age: 8 },
+    { color: 'orange', msg: 'Subscription synced', org: 'growthco', age: 22 },
+    { color: 'emerald', msg: 'Webhook health passed', org: 'nexus-dev', age: 31 },
   ]), []);
   const [elapsed, setElapsed] = useState(0);
-  const [visibleCount, setVisibleCount] = useState(isMobile ? events.length : 1);
+  const [visibleCount, setVisibleCount] = useState(active ? (isMobile ? events.length : 1) : 0);
 
   useEffect(() => {
+    if (!active) return;
     const timer = window.setInterval(() => setElapsed((v) => v + 1), 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [active]);
 
   useEffect(() => {
+    if (!active) {
+      setVisibleCount(0);
+      return;
+    }
     if (isMobile) {
       setVisibleCount(events.length);
       return;
     }
     const timer = window.setInterval(() => {
       setVisibleCount((v) => (v < events.length ? v + 1 : v));
-    }, 450);
+    }, 500);
     return () => window.clearInterval(timer);
-  }, [events.length, isMobile]);
+  }, [active, events.length, isMobile]);
 
   const formatAge = (baseAge: number) => {
     const seconds = baseAge + elapsed;
@@ -640,42 +615,40 @@ function ActivityFeed({ isMobile = false }: { isMobile?: boolean }) {
   };
 
   return (
-    <div className="rounded-2xl bg-slate-900/35 backdrop-blur-xl overflow-hidden shadow-[0_20px_50px_rgba(2,6,23,0.45)]">
-      <div className="px-5 py-3 border-b border-slate-700/20 flex items-center justify-between bg-slate-900/30">
-        <div className="flex items-center gap-2">
-          <div className="relative w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 8px #4ade80' }}>
-            <div className="absolute inset-0 rounded-full bg-emerald-400/50 animate-ping" />
-          </div>
-          <span className="text-xs font-semibold text-slate-300">Live Activity Stream</span>
-        </div>
+    <div className="rounded-2xl border border-slate-700/30 bg-slate-950/55 overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-slate-700/30 flex items-center justify-between">
+        <span className="text-[11px] font-semibold text-slate-300 tracking-wide">Live Activity Stream</span>
         <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1.5">
           stream.online
-          <span className="text-blue-400 animate-pulse">_</span>
+          <span className="text-cyan-400 animate-pulse">_</span>
         </span>
       </div>
-      <div className="divide-y divide-slate-700/20">
+      <div className="divide-y divide-slate-800/70">
         {events.map((ev, i) => (
           <div
             key={i}
-            className="px-5 py-2.5 flex items-center gap-3 hover:bg-slate-800/20 transition-colors"
+            className="px-4 py-2.5 flex items-center gap-2.5 hover:bg-slate-900/55 transition-colors"
             style={{
               opacity: i < visibleCount ? 1 : 0,
               transform: i < visibleCount ? 'translateY(0px)' : 'translateY(8px)',
               transition: 'opacity 0.35s ease, transform 0.35s ease',
+              transitionDelay: `${i * 85}ms`,
             }}
           >
+            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+              ev.color === 'blue' ? 'bg-blue-400' : ev.color === 'cyan' ? 'bg-cyan-400' : ev.color === 'orange' ? 'bg-orange-400' : 'bg-emerald-400'
+            }`} />
             <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
-              ev.color === 'blue' ? 'bg-blue-500/10' : ev.color === 'cyan' ? 'bg-cyan-500/10' :
-              ev.color === 'orange' ? 'bg-orange-500/10' : 'bg-emerald-500/10'
+              ev.color === 'blue' ? 'bg-blue-500/10' : ev.color === 'cyan' ? 'bg-cyan-500/10' : ev.color === 'orange' ? 'bg-orange-500/10' : 'bg-emerald-500/10'
             }`}>
-              {ev.color === 'blue'    && <Lock className="w-3 h-3 text-blue-400" />}
-              {ev.color === 'cyan'    && <Users className="w-3 h-3 text-cyan-400" />}
-              {ev.color === 'orange'  && <CreditCard className="w-3 h-3 text-orange-400" />}
+              {ev.color === 'blue' && <Lock className="w-3 h-3 text-blue-400" />}
+              {ev.color === 'cyan' && <Users className="w-3 h-3 text-cyan-400" />}
+              {ev.color === 'orange' && <CreditCard className="w-3 h-3 text-orange-400" />}
               {ev.color === 'emerald' && <Shield className="w-3 h-3 text-emerald-400" />}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-300 truncate">{ev.msg}</p>
-              <p className="text-[10px] text-slate-500 font-mono">{ev.org}</p>
+              <p className="text-[11px] text-slate-300 truncate">{ev.msg}</p>
+              <p className="text-[10px] text-slate-500 font-mono truncate">{ev.org}</p>
             </div>
             <span className="text-[10px] text-slate-500 shrink-0 font-mono">{formatAge(ev.age)}</span>
           </div>
@@ -685,134 +658,131 @@ function ActivityFeed({ isMobile = false }: { isMobile?: boolean }) {
   );
 }
 
-/* ===== Logo Section with Energy Control ===== */
+/* ===== Logo Section — Energy Core Visualization ===== */
 interface LogoSectionProps {
   isMobileOrbit: boolean;
   parallax: { x: number; y: number };
   orbitTech: Array<{ src: string; name: string; glow: string; delay: number }>;
 }
 
-function LogoSection({ isMobileOrbit, parallax, orbitTech }: LogoSectionProps) {
-  const [logoPhase, setLogoPhase] = useState(0); // 0=hidden, 1=label, 2=hands, 3=threads, 4=logos
-  
+// Elegant curved paths from energy core (360, 190) to each logo position.
+// Logo x positions assume max-w-3xl centered container ~720px wide with gap-x-14.
+// Logo centers: 136, 248, 360, 472, 584  at y ≈ 35 in SVG space.
+const EC_CONNECTIONS = [
+  { d: 'M 360 190 C 290 185 210 110 136 35', color: '#67e8f9', particleDelay:    0 },
+  { d: 'M 360 190 C 345 175 305 110 248 35', color: '#818cf8', particleDelay:  520 },
+  { d: 'M 360 190 C 360 158 360  85 360 35', color: '#a78bfa', particleDelay: 1040 },
+  { d: 'M 360 190 C 375 175 415 110 472 35', color: '#60a5fa', particleDelay: 1560 },
+  { d: 'M 360 190 C 430 185 510 110 584 35', color: '#34d399', particleDelay: 2080 },
+];
+
+function LogoSection({ isMobileOrbit, orbitTech }: LogoSectionProps) {
+  const [logoPhase, setLogoPhase] = useState(0); // 0=hidden  1=label  2=core+lines  3=logos
+
   useEffect(() => {
-    // Start after hero intro completes (2200ms)
     const t1 = setTimeout(() => setLogoPhase(1), 2200);
-    const t2 = setTimeout(() => setLogoPhase(2), 2400);
-    const t3 = setTimeout(() => setLogoPhase(3), 2700);
-    const t4 = setTimeout(() => setLogoPhase(4), 3300);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-    };
+    const t2 = setTimeout(() => setLogoPhase(2), 2700);
+    const t3 = setTimeout(() => setLogoPhase(3), 3300);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
 
   const showLabel = logoPhase >= 1;
-  const showHands = logoPhase >= 2;
-  const showThreads = logoPhase >= 3;
-  const showLogos = logoPhase >= 4;
+  const showCore  = logoPhase >= 2;
+  const showLogos = logoPhase >= 3;
 
   return (
     <div className="mt-14">
       {/* Label */}
       <p
         className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-700 mb-8"
-        style={{
-          opacity: showLabel ? 1 : 0,
-          transition: 'opacity 0.5s ease',
-        }}
+        style={{ opacity: showLabel ? 1 : 0, transition: 'opacity 0.6s ease' }}
       >
         Built with
       </p>
 
-      {/* Logo container */}
+      {/* Container — SVG uses height:0 + overflow:visible to draw below logos */}
       <div className="relative max-w-3xl mx-auto">
-        {/* Desktop: Energy hands framing the logos */}
-        {!isMobileOrbit && showHands && (
-          <svg
-            viewBox="0 0 720 280"
-            className="absolute inset-0 w-full pointer-events-none"
-            style={{
-              opacity: showHands ? 0.25 : 0,
-              transition: 'opacity 0.6s ease',
-              filter: 'drop-shadow(0 0 15px rgba(139,92,246,0.25))',
-            }}
-          >
-            <defs>
-              <linearGradient id="handL" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.2" />
-              </linearGradient>
-              <linearGradient id="handR" x1="1" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.2" />
-              </linearGradient>
-            </defs>
-            {/* Left hand */}
-            <g style={{ filter: 'blur(0.6px)' }}>
-              <path d="M 80 140 Q 65 120 75 85 L 105 65 Q 110 75 110 95 L 105 135 Z" fill="none" stroke="url(#handL)" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
-              <path d="M 85 135 L 80 180 Q 78 190 90 195" stroke="url(#handL)" strokeWidth="1.6" strokeLinecap="round" opacity="0.25" />
-              <line x1="75" y1="85" x2="65" y2="50" stroke="url(#handL)" strokeWidth="1" opacity="0.3" strokeLinecap="round" />
-              <line x1="85" y1="80" x2="78" y2="40" stroke="url(#handL)" strokeWidth="1" opacity="0.32" strokeLinecap="round" />
-              <line x1="100" y1="85" x2="102" y2="45" stroke="url(#handL)" strokeWidth="1.1" opacity="0.34" strokeLinecap="round" />
-            </g>
-            {/* Right hand */}
-            <g style={{ filter: 'blur(0.6px)' }}>
-              <path d="M 640 140 Q 655 120 645 85 L 615 65 Q 610 75 610 95 L 615 135 Z" fill="none" stroke="url(#handR)" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
-              <path d="M 635 135 L 640 180 Q 642 190 630 195" stroke="url(#handR)" strokeWidth="1.6" strokeLinecap="round" opacity="0.25" />
-              <line x1="645" y1="85" x2="655" y2="50" stroke="url(#handR)" strokeWidth="1" opacity="0.3" strokeLinecap="round" />
-              <line x1="635" y1="80" x2="642" y2="40" stroke="url(#handR)" strokeWidth="1" opacity="0.32" strokeLinecap="round" />
-              <line x1="620" y1="85" x2="618" y2="45" stroke="url(#handR)" strokeWidth="1.1" opacity="0.34" strokeLinecap="round" />
-            </g>
-          </svg>
-        )}
 
-        {/* Desktop: Energy threads from hands to logos */}
-        {!isMobileOrbit && showThreads && (
+        {/* Desktop: energy core + connection lines */}
+        {!isMobileOrbit && (
           <svg
-            viewBox="0 0 720 280"
-            className="absolute inset-0 w-full pointer-events-none"
+            viewBox="0 0 720 220"
+            className="absolute left-0 top-0 w-full pointer-events-none"
             style={{
-              opacity: showThreads ? 1 : 0,
-              transition: 'opacity 0.5s ease',
+              height: 0,
+              overflow: 'visible',
+              opacity: showCore ? 1 : 0,
+              transition: 'opacity 1s ease',
             }}
           >
             <defs>
-              <filter id="threadGlow">
-                <feGaussianBlur stdDeviation="1" />
+              <filter id="ecLineGlow" x="-60%" y="-60%" width="220%" height="220%">
+                <feGaussianBlur stdDeviation="2.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
               </filter>
+              <filter id="ecCoreGlow" x="-150%" y="-150%" width="400%" height="400%">
+                <feGaussianBlur stdDeviation="7" />
+              </filter>
+              <radialGradient id="ecCoreGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#ddd6fe" stopOpacity="1" />
+                <stop offset="40%" stopColor="#818cf8" stopOpacity="0.65" />
+                <stop offset="100%" stopColor="#4f46e5" stopOpacity="0" />
+              </radialGradient>
+              <radialGradient id="ecBlobGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+              </radialGradient>
             </defs>
-            {/* Threads from left hand fingers to left/center logos */}
-            {[
-              { x1: 65, y1: 50, x2: 180, y2: 240, color: '#a78bfa' }, // left hand -> React
-              { x1: 78, y1: 40, x2: 270, y2: 240, color: '#c4b5fd' }, // left hand -> TypeScript
-            ].map((t, i) => (
-              <g key={`left-${i}`}>
-                <path d={`M ${t.x1} ${t.y1} Q ${(t.x1 + t.x2) / 2} ${(t.y1 + t.y2) / 2 - 40} ${t.x2} ${t.y2}`} stroke={t.color} strokeWidth="3" fill="none" opacity="0.12" filter="url(#threadGlow)" style={{ animation: `threadFlow 2.4s ease-in-out infinite`, animationDelay: `${100 + i * 50}ms` }} />
-                <path d={`M ${t.x1} ${t.y1} Q ${(t.x1 + t.x2) / 2} ${(t.y1 + t.y2) / 2 - 40} ${t.x2} ${t.y2}`} stroke={t.color} strokeWidth="1.1" fill="none" opacity="0.35" className="animate-thread-extend" style={{ animationDelay: `${500 + i * 60}ms`, strokeDasharray: '200' }} />
+
+            <ellipse cx="360" cy="190" rx="46" ry="32" fill="url(#ecBlobGrad)" />
+
+            <g transform="translate(360, 190)">
+              {[0, 1.1, 2.2].map((delay, i) => (
+                <circle
+                  key={i}
+                  r="14"
+                  fill="none"
+                  stroke="#818cf8"
+                  strokeWidth="0.6"
+                  className="ec-ripple"
+                  style={{ animationDelay: `${delay}s` }}
+                />
+              ))}
+            </g>
+
+            {EC_CONNECTIONS.map((conn, i) => (
+              <g key={i}>
+                <path d={conn.d} stroke={conn.color} strokeWidth="3" fill="none" opacity="0.06" filter="url(#ecLineGlow)" />
+                <path d={conn.d} stroke={conn.color} strokeWidth="0.75" fill="none" opacity="0.18" />
+                <path
+                  d={conn.d}
+                  stroke={conn.color}
+                  strokeWidth="1.8"
+                  fill="none"
+                  strokeLinecap="round"
+                  className="ec-particle"
+                  style={{ animationDelay: `${conn.particleDelay}ms` }}
+                />
               </g>
             ))}
-            {/* Center thread */}
-            {<g key="center">
-              <path d="M 102 45 Q 360 180 360 240" stroke="#818cf8" strokeWidth="3" fill="none" opacity="0.12" filter="url(#threadGlow)" style={{ animation: `threadFlow 2.4s ease-in-out infinite`, animationDelay: `200ms` }} />
-              <path d="M 102 45 Q 360 180 360 240" stroke="#818cf8" strokeWidth="1.1" fill="none" opacity="0.35" className="animate-thread-extend" style={{ animationDelay: `680ms`, strokeDasharray: '200' }} />
-            </g>}
-            {/* Threads from right hand fingers to right/center logos */}
-            {[
-              { x1: 642, y1: 40, x2: 450, y2: 240, color: '#60a5fa' }, // right hand -> Stripe
-              { x1: 655, y1: 50, x2: 540, y2: 240, color: '#34d399' }, // right hand -> Node
-            ].map((t, i) => (
-              <g key={`right-${i}`}>
-                <path d={`M ${t.x1} ${t.y1} Q ${(t.x1 + t.x2) / 2} ${(t.y1 + t.y2) / 2 - 40} ${t.x2} ${t.y2}`} stroke={t.color} strokeWidth="3" fill="none" opacity="0.12" filter="url(#threadGlow)" style={{ animation: `threadFlow 2.4s ease-in-out infinite`, animationDelay: `${150 + i * 50}ms` }} />
-                <path d={`M ${t.x1} ${t.y1} Q ${(t.x1 + t.x2) / 2} ${(t.y1 + t.y2) / 2 - 40} ${t.x2} ${t.y2}`} stroke={t.color} strokeWidth="1.1" fill="none" opacity="0.35" className="animate-thread-extend" style={{ animationDelay: `${620 + i * 60}ms`, strokeDasharray: '200' }} />
-              </g>
-            ))}
+
+            <circle cx="360" cy="190" r="18" fill="url(#ecCoreGrad)" filter="url(#ecCoreGlow)" className="ec-core-pulse" />
+            <circle cx="360" cy="190" r="11" fill="url(#ecCoreGrad)" className="ec-core-pulse" />
+            <circle cx="360" cy="190" r="9" fill="none" stroke="#a78bfa" strokeWidth="0.7" opacity="0.55" className="ec-core-pulse" />
+            <circle cx="360" cy="190" r="5" fill="none" stroke="#c4b5fd" strokeWidth="0.5" opacity="0.7" className="ec-core-pulse" />
+            <circle cx="360" cy="190" r="2.2" fill="#ede9fe" opacity="0.95" />
           </svg>
         )}
 
-        {/* Logo grid */}
+        {/* Mobile: minimal core dot only */}
+        {isMobileOrbit && showCore && (
+          <div
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full ec-core-pulse"
+            style={{ background: 'radial-gradient(circle, #a78bfa 0%, transparent 100%)', filter: 'blur(2px)' }}
+          />
+        )}
+
+        {/* ── Logo grid ── */}
         <div className={`relative flex ${isMobileOrbit ? 'flex-wrap justify-center gap-x-6 gap-y-8' : 'flex-wrap items-center justify-center gap-x-10 gap-y-8 sm:gap-x-14'}`}>
           {orbitTech.map((tech, i) => (
             <div
@@ -820,23 +790,25 @@ function LogoSection({ isMobileOrbit, parallax, orbitTech }: LogoSectionProps) {
               className="group flex flex-col items-center gap-3 cursor-pointer"
               style={{
                 opacity: showLogos ? 1 : 0,
-                transform: showLogos ? 'translateY(0)' : 'translateY(8px)',
-                transition: 'opacity 0.4s ease, transform 0.4s ease',
-                transitionDelay: showLogos ? `${i * 80}ms` : '0ms',
+                transform: showLogos ? 'translateY(0)' : 'translateY(10px)',
+                transition: 'opacity 0.5s ease, transform 0.5s ease',
+                transitionDelay: showLogos ? `${i * 90}ms` : '0ms',
               }}
             >
               {/* Logo + glow wrapper */}
               <div className="relative flex items-center justify-center w-14 h-14">
+                {/* Ambient logo glow */}
                 <div
                   className="absolute inset-0 rounded-full blur-xl pointer-events-none"
-                  style={{ background: tech.glow, opacity: 0.12 }}
+                  style={{ background: tech.glow, opacity: 0.14 }}
                 />
+                {/* Hover bloom */}
                 <div
-                  className="absolute rounded-full blur-3xl pointer-events-none opacity-0 transition-all duration-300 group-hover:opacity-80"
+                  className="absolute rounded-full blur-2xl pointer-events-none opacity-0 transition-all duration-400 group-hover:opacity-55"
                   style={{
                     background: tech.glow,
-                    width: 80,
-                    height: 80,
+                    width: 72,
+                    height: 72,
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%,-50%)',
@@ -845,18 +817,12 @@ function LogoSection({ isMobileOrbit, parallax, orbitTech }: LogoSectionProps) {
                 <img
                   src={tech.src}
                   alt={tech.name}
-                  className="relative w-11 h-11 object-contain transition-all duration-300"
+                  className="relative w-11 h-11 object-contain transition-all duration-300 group-hover:scale-110 group-hover:brightness-110 group-hover:saturate-110"
                   style={{
-                    filter: 'brightness(0.85) saturate(0.8)',
-                    animation: showLogos ? `logoControlledSway ${3.2 + i * 0.15}s ease-in-out infinite` : 'none',
+                    filter: 'brightness(0.82) saturate(0.75)',
+                    animation: showLogos ? `logoControlledSway ${3.2 + i * 0.18}s ease-in-out infinite` : 'none',
                   }}
                   data-sway-index={i}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLImageElement).classList.add('logo-hover');
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLImageElement).classList.remove('logo-hover');
-                  }}
                 />
               </div>
               <span className="text-[10px] font-medium tracking-wide text-slate-500/80 group-hover:text-slate-300 transition-colors duration-200">
@@ -865,6 +831,7 @@ function LogoSection({ isMobileOrbit, parallax, orbitTech }: LogoSectionProps) {
             </div>
           ))}
         </div>
+
       </div>
     </div>
   );
@@ -889,9 +856,47 @@ export default function LandingPage() {
     { src: '/node-logo.png',                name: 'Node.js',    glow: 'rgba(74,222,128,0.4)',  delay: 520 },
   ]), []);
 
-  const isStrikePhase   = introPhase >= 1;
-  const isRevealPhase   = introPhase >= 2;
-  const isIdlePhase     = introPhase >= 3;
+  const isFlickerPhase  = introPhase >= 1;
+  const isStrikePhase   = introPhase >= 2;
+  const isImpactPhase   = introPhase >= 3;
+  const isRevealPhase   = introPhase >= 4;
+  const isIdlePhase     = introPhase >= 5;
+  const { ref: consoleRef, visible: consoleVisible } = useReveal();
+  const terminalLines = useMemo(() => ([
+    'Initializing tenant environment...',
+    'Auth layer validated',
+    'Stripe billing synced',
+    'RBAC policies applied',
+    'Realtime streams connected',
+    'Deploying Nexus orchestration layer...',
+    'System online',
+  ]), []);
+  const [terminalLineIndex, setTerminalLineIndex] = useState(0);
+  const [typedChars, setTypedChars] = useState(0);
+
+  useEffect(() => {
+    if (!consoleVisible) {
+      setTerminalLineIndex(0);
+      setTypedChars(0);
+      return;
+    }
+
+    const currentLine = terminalLines[terminalLineIndex];
+    if (!currentLine) return;
+
+    if (typedChars < currentLine.length) {
+      const typingTimer = window.setTimeout(() => setTypedChars((prev) => prev + 1), 24);
+      return () => window.clearTimeout(typingTimer);
+    }
+
+    if (terminalLineIndex < terminalLines.length - 1) {
+      const nextLineTimer = window.setTimeout(() => {
+        setTerminalLineIndex((prev) => prev + 1);
+        setTypedChars(0);
+      }, 240);
+      return () => window.clearTimeout(nextLineTimer);
+    }
+  }, [consoleVisible, terminalLineIndex, terminalLines, typedChars]);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 40);
@@ -943,40 +948,52 @@ export default function LandingPage() {
         {/* Deep background layers */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-[#060d1f] to-[#020617]" />
 
-        {/* Full-screen lightning flash overlay */}
-        {isStrikePhase && (
+        {/* Pre-strike ambient flicker at top center */}
+        {isFlickerPhase && !isStrikePhase && (
           <div
-            className="absolute inset-0 pointer-events-none animate-lightning-flash"
+            className="absolute pointer-events-none animate-boot-flicker"
             style={{
-              background: 'radial-gradient(ellipse 60% 50% at 50% 30%, rgba(147,197,253,0.18) 0%, rgba(59,130,246,0.06) 50%, transparent 80%)',
+              top: 0, left: '50%', transform: 'translateX(-50%)',
+              width: 320, height: 180,
+              background: 'radial-gradient(ellipse 50% 100% at 50% 0%, rgba(103,232,249,0.09) 0%, transparent 80%)',
+              zIndex: 6,
+            }}
+          />
+        )}
+        {/* Impact flash — brief bloom when bolt hits */}
+        {isImpactPhase && (
+          <div
+            className="absolute inset-0 pointer-events-none animate-impact-flash"
+            style={{
+              background: 'radial-gradient(ellipse 55% 45% at 50% 42%, rgba(255,255,255,0.1) 0%, rgba(103,232,249,0.05) 40%, transparent 70%)',
               zIndex: 6,
             }}
           />
         )}
 
         {/* Shockwave rings (appear on strike) */}
-        <ShockwaveRings visible={isStrikePhase} />
+        <ShockwaveRings visible={isImpactPhase} />
 
-        {/* Electric arcs */}
-        <ElectricArcs visible={isStrikePhase} />
+        {/* Elegant energy arcs — fade in with content reveal */}
+        <ElegantArcs visible={isRevealPhase} />
 
-        {/* Lightning bolt (positioned above hero center) */}
-        <Lightning visible={isStrikePhase} />
+        {/* Lightning bolt — phase-aware: pre-flicker + strike */}
+        <Lightning phase={introPhase} />
 
-        {/* Ambient radial glow — expands after reveal */}
+        {/* Ambient radial glow — seeds at impact, expands through reveal */}
         <div
-          className="absolute pointer-events-none transition-all duration-[2000ms] ease-out"
+          className="absolute pointer-events-none transition-all duration-[2200ms] ease-out"
           style={{
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: isIdlePhase ? 900 : isRevealPhase ? 700 : 300,
-            height: isIdlePhase ? 700 : isRevealPhase ? 500 : 200,
+            width:   isIdlePhase ? 1000 : isRevealPhase ? 750 : isImpactPhase ? 460 : 200,
+            height:  isIdlePhase ? 750  : isRevealPhase ? 540 : isImpactPhase ? 320 : 120,
             background: 'radial-gradient(ellipse at center, rgba(59,130,246,0.07) 0%, rgba(96,165,250,0.03) 50%, transparent 75%)',
             borderRadius: '50%',
             filter: 'blur(60px)',
             zIndex: 2,
-            opacity: isRevealPhase ? 1 : 0,
+            opacity: isImpactPhase ? 1 : 0,
           }}
         />
         {/* Secondary warm glow */}
@@ -1019,7 +1036,7 @@ export default function LandingPage() {
           />
         </div>
 
-        {/* Electric particles (appear post-reveal) */}
+        {/* Ambient particles — phase-aware opacity */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -1027,7 +1044,7 @@ export default function LandingPage() {
             zIndex: 1,
           }}
         >
-          <ElectricParticles active={isRevealPhase} />
+          <AmbientParticles phase={introPhase} />
         </div>
 
         {/* Data flow lines */}
@@ -1088,7 +1105,7 @@ export default function LandingPage() {
             className={`text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed transition-all duration-700 ${
               isRevealPhase ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
-            style={{ transitionDelay: isRevealPhase ? '300ms' : '0ms' }}
+            style={{ transitionDelay: isRevealPhase ? '420ms' : '0ms' }}
           >
             A modern SaaS operations platform for authentication, billing, team roles, and real-time
             product visibility — built to help teams move faster with confidence.
@@ -1099,7 +1116,7 @@ export default function LandingPage() {
             className={`flex flex-col sm:flex-row items-center justify-center gap-4 mb-14 transition-all duration-700 ${
               isRevealPhase ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
-            style={{ transitionDelay: isRevealPhase ? '500ms' : '0ms' }}
+            style={{ transitionDelay: isRevealPhase ? '700ms' : '0ms' }}
           >
             <Link
               to="/signup"
@@ -1140,216 +1157,214 @@ export default function LandingPage() {
       </section>
 
       {/* ===== COMMAND LAYER ===== */}
-      <section id="features" className="relative py-20 sm:py-28">
-        {/* invisible anchor for #architecture nav link */}
+      <section id="features" ref={consoleRef} className="relative py-20 sm:py-28">
         <div id="architecture" className="absolute -top-16" />
 
-        {/* Ambient background + system lines */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute inset-0 opacity-25" style={{
-            backgroundImage: 'linear-gradient(rgba(30,41,59,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(30,41,59,0.22) 1px, transparent 1px)',
-            backgroundSize: '34px 34px'
-          }} />
-          <div className="absolute top-1/2 left-1/2 w-[780px] h-[420px] bg-blue-600/[0.055] rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute top-[38%] left-1/3 w-[360px] h-[360px] bg-indigo-500/[0.05] rounded-full blur-[110px]" />
-          <div className="absolute bottom-6 right-1/4 w-[320px] h-[320px] bg-cyan-500/[0.045] rounded-full blur-[100px]" />
-          {!isMobileOrbit && Array.from({ length: 10 }).map((_, i) => (
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage: 'linear-gradient(rgba(30,41,59,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(30,41,59,0.16) 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+            }}
+          />
+          <div className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 w-[980px] h-[560px] rounded-full bg-blue-500/[0.05] blur-[160px]" />
+          <div className="absolute left-[28%] top-[35%] w-[360px] h-[360px] rounded-full bg-indigo-500/[0.045] blur-[120px]" />
+          <div className="absolute right-[18%] bottom-[18%] w-[320px] h-[320px] rounded-full bg-cyan-500/[0.04] blur-[110px]" />
+          {!isMobileOrbit && Array.from({ length: 12 }).map((_, i) => (
             <div
-              key={`cmd-particle-${i}`}
+              key={`ops-particle-${i}`}
               className="absolute rounded-full bg-blue-300/20"
               style={{
                 width: 2,
                 height: 2,
-                left: `${10 + i * 9}%`,
-                top: `${25 + (i % 4) * 14}%`,
-                animation: `subtleFloat ${5 + (i % 3)}s ease-in-out infinite`,
-                animationDelay: `${i * 0.35}s`,
-                boxShadow: '0 0 8px rgba(125,211,252,0.45)'
+                left: `${8 + i * 7}%`,
+                top: `${18 + (i % 5) * 13}%`,
+                animation: `subtleFloat ${4.8 + (i % 4) * 0.8}s ease-in-out infinite`,
+                animationDelay: `${i * 0.25}s`,
+                boxShadow: '0 0 8px rgba(103,232,249,0.35)',
               }}
             />
           ))}
         </div>
 
         <div className="relative max-w-7xl mx-auto px-6">
-          {/* Section header */}
-          <div className="mb-12 sm:mb-14">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-300/80 mb-3">Command Layer</p>
+          <div className={`mb-11 sm:mb-14 transition-all duration-700 ${consoleVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-300/75 mb-3">Command Layer</p>
             <h2 className="text-3xl sm:text-[2.6rem] font-semibold tracking-[-0.02em] leading-[1.05] mb-4 text-slate-100">
-              The Nexus <span className="bg-gradient-to-r from-blue-300 via-cyan-300 to-indigo-300 bg-clip-text text-transparent">Control Layer</span>
+              Live SaaS Operations Console
             </h2>
-            <p className="text-slate-400 max-w-3xl text-sm sm:text-[15px] leading-relaxed">
-              A real-time orchestration layer powering <span className="text-slate-200">authentication</span>, <span className="text-slate-200">billing</span>, <span className="text-slate-200">permissions</span>, and system intelligence across every tenant.
+            <p className="text-slate-400 max-w-4xl text-sm sm:text-[15px] leading-relaxed">
+              Monitor tenants, billing, permissions, and activity from one real-time command layer — built for teams that need clarity at scale.
             </p>
           </div>
 
-          {/* Main 2-col layout */}
-          <div className="grid lg:grid-cols-[1fr_380px] gap-6 xl:gap-10 items-start">
+          {/* Live SaaS Command Terminal */}
+          <div className="relative mt-6 sm:mt-10">
+            <div className="relative h-[620px] sm:h-[680px] max-w-6xl mx-auto">
+              {/* Atmospheric background */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 w-[980px] h-[560px] rounded-full bg-indigo-500/[0.08] blur-[90px]" />
+                <div className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 w-[620px] h-[360px] rounded-full bg-cyan-500/[0.07] blur-[70px]" />
+                <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 92% 82% at 50% 50%, transparent 35%, rgba(2,6,23,0.6) 100%)' }} />
 
-            {/* ---- LEFT: Visualization + metrics + feed ---- */}
-            <div className="space-y-4">
-
-              {/* Topology map */}
-              <CommandTopology isMobile={isMobileOrbit} />
-
-              {/* Metrics strip */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {([
-                  { value: '99.9%', label: 'Uptime SLA',          color: 'emerald' },
-                  { value: 'RLS',   label: 'Row-level isolation',  color: 'blue'    },
-                  { value: 'Stripe',label: 'Billing layer',        color: 'orange'  },
-                  { value: 'RBAC',  label: 'Role enforcement',     color: 'cyan'    },
-                ] as const).map((m, i) => (
-                  <div key={i} className={`group relative rounded-xl p-4 bg-slate-900/35 backdrop-blur-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden ${
-                    m.color === 'emerald' ? 'hover:shadow-[0_0_28px_rgba(16,185,129,0.18)]' :
-                    m.color === 'blue'    ? 'hover:shadow-[0_0_28px_rgba(59,130,246,0.18)]' :
-                    m.color === 'orange'  ? 'hover:shadow-[0_0_28px_rgba(249,115,22,0.18)]' :
-                                            'hover:shadow-[0_0_28px_rgba(6,182,212,0.18)]'
-                  }`}>
-                    <div className={`absolute bottom-0 left-0 h-px w-full animate-shimmer ${
-                      m.color === 'emerald' ? 'bg-gradient-to-r from-transparent via-emerald-400/70 to-transparent' :
-                      m.color === 'blue'    ? 'bg-gradient-to-r from-transparent via-blue-400/70 to-transparent' :
-                      m.color === 'orange'  ? 'bg-gradient-to-r from-transparent via-orange-400/70 to-transparent' :
-                                              'bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent'
-                    }`} />
-                    <p className={`text-xl font-bold font-mono mb-0.5 ${
-                      m.color === 'emerald' ? 'text-emerald-400' :
-                      m.color === 'blue'    ? 'text-blue-400' :
-                      m.color === 'orange'  ? 'text-orange-400' : 'text-cyan-400'
-                    }`}>{m.value}</p>
-                    <p className="text-[10px] text-slate-500 leading-tight">{m.label}</p>
-                  </div>
+                {!isMobileOrbit && Array.from({ length: 24 }).map((_, i) => (
+                  <div
+                    key={`terminal-particle-${i}`}
+                    className="absolute rounded-full"
+                    style={{
+                      width: i % 3 === 0 ? 2 : 1.5,
+                      height: i % 3 === 0 ? 2 : 1.5,
+                      left: `${6 + i * 3.8}%`,
+                      top: `${20 + (i % 7) * 9}%`,
+                      background: i % 2 === 0 ? 'rgba(99,102,241,0.45)' : 'rgba(34,211,238,0.42)',
+                      boxShadow: i % 2 === 0 ? '0 0 8px rgba(99,102,241,0.5)' : '0 0 8px rgba(34,211,238,0.45)',
+                      animation: `subtleFloat ${6 + (i % 5) * 0.9}s ease-in-out infinite`,
+                      animationDelay: `${i * 0.2}s`,
+                    }}
+                  />
                 ))}
-              </div>
 
-              {/* Activity feed */}
-              <ActivityFeed isMobile={isMobileOrbit} />
-            </div>
+                {/* subtle arcs */}
+                <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 1200 680" fill="none" preserveAspectRatio="none">
+                  <path d="M120 500 C 260 410, 470 400, 600 450" stroke="url(#arc1)" strokeWidth="1.1" />
+                  <path d="M1080 500 C 920 392, 710 380, 600 450" stroke="url(#arc2)" strokeWidth="1.1" />
+                  <defs>
+                    <linearGradient id="arc1" x1="120" y1="500" x2="600" y2="450" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#60a5fa" stopOpacity="0" />
+                      <stop offset="0.6" stopColor="#60a5fa" stopOpacity="0.42" />
+                      <stop offset="1" stopColor="#22d3ee" stopOpacity="0.12" />
+                    </linearGradient>
+                    <linearGradient id="arc2" x1="1080" y1="500" x2="600" y2="450" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#22d3ee" stopOpacity="0" />
+                      <stop offset="0.6" stopColor="#22d3ee" stopOpacity="0.42" />
+                      <stop offset="1" stopColor="#a78bfa" stopOpacity="0.14" />
+                    </linearGradient>
+                  </defs>
+                </svg>
 
-            {/* ---- RIGHT: Module cards ---- */}
-            <div className="space-y-2.5">
-              {/* Stack header */}
-              <div className="flex items-center justify-between px-1 mb-1">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Active Modules</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 6px #4ade80' }} />
-                  <span className="text-[10px] text-slate-600">5 / 5 online</span>
+                {/* very subtle topology behind terminal */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[40%] w-[760px] opacity-[0.22] scale-110 blur-[0.3px]">
+                  <CommandTopology isMobile={false} active={consoleVisible} activeTarget={null} />
                 </div>
               </div>
 
-              {([
-                {
-                  icon: <Lock className="w-4 h-4 text-blue-400" />,
-                  label: 'Multi-Tenant Auth',
-                  status: 'Active' as const,
-                  color: 'blue' as const,
-                  desc: 'Supabase JWT sessions with per-org data isolation and RLS enforcement on every query.',
-                  features: ['JWT + RLS enforcement', 'Org switching, zero leakage'],
-                },
-                {
-                  icon: <Shield className="w-4 h-4 text-orange-400" />,
-                  label: 'Role-Based Access',
-                  status: 'Active' as const,
-                  color: 'orange' as const,
-                  desc: 'Admin and member scopes with permission-gated UI and DB-level policy enforcement.',
-                  features: ['Admin / member scopes', 'Permission-gated routes'],
-                },
-                {
-                  icon: <CreditCard className="w-4 h-4 text-emerald-400" />,
-                  label: 'Stripe Billing Layer',
-                  status: 'Test mode' as const,
-                  color: 'emerald' as const,
-                  desc: 'Hosted checkout, subscription portal, and webhook-verified plan upgrades — zero custom UI.',
-                  features: ['Checkout + billing portal', 'Webhook-verified upgrades'],
-                },
-                {
-                  icon: <Users className="w-4 h-4 text-cyan-400" />,
-                  label: 'Team Management',
-                  status: 'Active' as const,
-                  color: 'cyan' as const,
-                  desc: 'Invite members by email, manage roles, and maintain a full activity audit trail per org.',
-                  features: ['Invite by email', 'Activity log per member'],
-                },
-                {
-                  icon: <BarChart3 className="w-4 h-4 text-blue-400" />,
-                  label: 'Real-Time Dashboard',
-                  status: 'Active' as const,
-                  color: 'blue' as const,
-                  desc: 'Live org command center: event timelines, plan status, team roster, and usage signals.',
-                  features: ['Activity timelines', 'Plan + usage visibility'],
-                },
-              ]).map((mod, i) => (
-                <div
-                  key={i}
-                  className={`group relative pl-4 pr-4 pt-3.5 pb-3.5 rounded-xl bg-slate-900/35 backdrop-blur-xl transition-all duration-300 hover:bg-slate-900/55 hover:-translate-y-[2px] overflow-hidden ${
-                    mod.color === 'blue'    ? 'hover:shadow-[0_0_30px_rgba(59,130,246,0.12)]' :
-                    mod.color === 'orange'  ? 'hover:shadow-[0_0_30px_rgba(249,115,22,0.12)]' :
-                    mod.color === 'emerald' ? 'hover:shadow-[0_0_30px_rgba(16,185,129,0.12)]' :
-                                             'hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
-                  }`}
-                >
-                  <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
-                    mod.color === 'blue'    ? 'bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-blue-500/0' :
-                    mod.color === 'orange'  ? 'bg-gradient-to-r from-orange-500/0 via-orange-500/10 to-orange-500/0' :
-                    mod.color === 'emerald' ? 'bg-gradient-to-r from-emerald-500/0 via-emerald-500/10 to-emerald-500/0' :
-                                             'bg-gradient-to-r from-cyan-500/0 via-cyan-500/10 to-cyan-500/0'
-                  }`} />
-                  {/* Accent left bar */}
-                  <div className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full ${
-                    mod.color === 'blue'    ? 'bg-blue-500/50' :
-                    mod.color === 'orange'  ? 'bg-orange-500/50' :
-                    mod.color === 'emerald' ? 'bg-emerald-500/50' : 'bg-cyan-500/50'
-                  }`} />
-
-                  {/* Row 1: icon + name + status chip */}
-                  <div className="relative flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
-                        mod.color === 'blue'    ? 'bg-blue-500/10' :
-                        mod.color === 'orange'  ? 'bg-orange-500/10' :
-                        mod.color === 'emerald' ? 'bg-emerald-500/10' : 'bg-cyan-500/10'
-                      }`}>
-                        {mod.icon}
-                      </div>
-                      <span className="text-sm font-semibold text-white">{mod.label}</span>
-                    </div>
-                    <span className={`inline-flex items-center gap-1 text-[9px] font-semibold px-2 py-0.5 rounded-full border ${
-                      mod.status === 'Test mode'
-                        ? 'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${mod.status === 'Test mode' ? 'bg-orange-400' : 'bg-emerald-400'} animate-pulse`} />
-                      {mod.status}
-                    </span>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-[11px] text-slate-400 leading-relaxed mb-2">{mod.desc}</p>
-
-                  {/* Mini feature list */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-                    {mod.features.map((f, j) => (
-                      <div key={j} className="flex items-center gap-1.5">
-                        <div className={`w-1 h-1 rounded-full ${
-                          mod.color === 'blue'    ? 'bg-blue-400/50' :
-                          mod.color === 'orange'  ? 'bg-orange-400/50' :
-                          mod.color === 'emerald' ? 'bg-emerald-400/50' : 'bg-cyan-400/50'
-                        }`} />
-                        <span className="text-[10px] text-slate-500">{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              {/* Bottom CTA nudge */}
-              <Link
-                to="/signup"
-                className="group flex items-center justify-between w-full px-4 py-3 rounded-xl bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/15 hover:border-blue-500/35 transition-all duration-200 mt-1"
+              {/* Terminal centerpiece */}
+              <div
+                className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 z-20 w-full max-w-[940px] px-2 sm:px-6"
+                style={{
+                  opacity: consoleVisible ? 1 : 0,
+                  transform: consoleVisible
+                    ? 'translate(-50%, -50%) perspective(1400px) rotateX(1.5deg)'
+                    : 'translate(-50%, -46%) perspective(1400px) rotateX(1.5deg)',
+                  transition: 'opacity 0.75s ease, transform 0.75s ease',
+                }}
               >
-                <span className="text-sm font-medium text-blue-300">Deploy your Nexus instance</span>
-                <ArrowRight className="w-4 h-4 text-blue-400 transition-transform group-hover:translate-x-0.5" />
-              </Link>
+                <div
+                  className="relative overflow-hidden rounded-2xl sm:rounded-3xl"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(9,14,30,0.82) 0%, rgba(6,10,22,0.9) 100%)',
+                    border: '1px solid rgba(148,163,184,0.18)',
+                    backdropFilter: 'blur(28px)',
+                    boxShadow: '0 34px 100px rgba(2,6,23,0.72), 0 0 0 1px rgba(255,255,255,0.025), 0 0 65px rgba(56,189,248,0.08) inset',
+                    animation: 'subtleFloat 8.4s ease-in-out infinite',
+                  }}
+                >
+                  {/* noise + scanline texture */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      backgroundImage: 'radial-gradient(rgba(255,255,255,0.03) 0.55px, transparent 0.55px), repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px)',
+                      backgroundSize: '3px 3px, 100% 4px',
+                      opacity: 0.33,
+                    }}
+                  />
+
+                  {/* top chrome */}
+                  <div className="relative z-10 px-4 sm:px-6 py-3.5 border-b border-slate-700/45 flex items-center justify-between bg-slate-950/28">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-400/60" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400/60" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/70" />
+                      </div>
+                      <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-500 font-mono">
+                        <span>nexus-orchestrator</span>
+                        <span className="w-px h-3 bg-slate-700/70" />
+                        <span className="text-slate-400">prod-cluster-01</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-[10px] font-mono">
+                      <span className="inline-flex items-center gap-1 text-emerald-300/85">
+                        <span className="relative flex w-1.5 h-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40" />
+                          <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-emerald-400" />
+                        </span>
+                        live
+                      </span>
+                      <span className="text-slate-500">v2.4.1</span>
+                    </div>
+                  </div>
+
+                  {/* terminal stream */}
+                  <div className="relative z-10 px-4 sm:px-7 py-4 sm:py-6 min-h-[340px] sm:min-h-[380px] font-mono">
+                    <div className="space-y-2.5 sm:space-y-3">
+                      {terminalLines.map((line, index) => {
+                        const done = index < terminalLineIndex;
+                        const activeLine = index === terminalLineIndex;
+                        const hidden = index > terminalLineIndex;
+                        const typedText = activeLine ? line.slice(0, typedChars) : (done ? line : '');
+                        return (
+                          <div
+                            key={line}
+                            className="group flex items-start gap-2.5 sm:gap-3 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 transition-all duration-500"
+                            style={{
+                              opacity: hidden ? 0 : 1,
+                              transform: hidden ? 'translateY(8px)' : 'translateY(0)',
+                              background: done || activeLine ? 'rgba(148,163,184,0.03)' : 'transparent',
+                            }}
+                          >
+                            <span className="mt-[2px] shrink-0" style={{ color: done ? 'rgba(34,197,94,0.8)' : activeLine ? 'rgba(56,189,248,0.85)' : 'rgba(100,116,139,0.5)' }}>
+                              {done ? '>' : activeLine ? '$' : '·'}
+                            </span>
+                            <span className="text-[12px] sm:text-[13px] leading-relaxed tracking-[0.01em]" style={{ color: done ? 'rgba(203,213,225,0.92)' : activeLine ? 'rgba(224,242,254,0.92)' : 'rgba(148,163,184,0.45)' }}>
+                              {typedText}
+                              {activeLine && (
+                                <span className="ml-0.5 inline-block w-[8px] h-[1.1em] align-[-2px] bg-cyan-300/85 animate-pulse" style={{ boxShadow: '0 0 8px rgba(34,211,238,0.65)' }} />
+                              )}
+                            </span>
+                            {(done || activeLine) && (
+                              <span
+                                className="ml-auto mt-0.5 h-2 w-2 rounded-full shrink-0"
+                                style={{
+                                  background: done ? 'rgba(34,197,94,0.75)' : 'rgba(56,189,248,0.75)',
+                                  boxShadow: done ? '0 0 8px rgba(34,197,94,0.55)' : '0 0 8px rgba(56,189,248,0.55)',
+                                }}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-slate-700/40 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500">
+                      <span className="font-mono">stream.online</span>
+                      <span className="font-mono text-cyan-300/70">NEXUS ORCHESTRATION ACTIVE</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <div className="relative mt-6">
+            <Link
+              to="/signup"
+              className="group inline-flex items-center gap-2 text-sm text-blue-300 hover:text-blue-200 transition-colors"
+            >
+              Explore the command layer
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </div>
         </div>
       </section>
@@ -1384,46 +1399,7 @@ export default function LandingPage() {
             />
           </div>
         </div>
-      </section>
-
-      {/* ===== FINAL CTA ===== */}
-      <section className="relative py-24 sm:py-32">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <div className="relative p-12 sm:p-16 rounded-3xl bg-gradient-to-br from-blue-600/8 via-slate-900/90 to-orange-600/5 border border-blue-500/15 overflow-hidden">
-            {/* Background effects */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-0 left-1/4 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px]" />
-              <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-orange-500/5 rounded-full blur-[80px]" />
-            </div>
-            {/* Subtle dragon in CTA background */}
-            <div className="absolute inset-0 pointer-events-none opacity-[0.03]">
-              <DragonSilhouette className="absolute w-96 h-60 text-blue-400 -right-10 top-0" />
-            </div>
-            <div className="relative">
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-                Launch your SaaS control center today
-              </h2>
-              <p className="text-slate-400 max-w-lg mx-auto mb-8 leading-relaxed">
-                Join teams who use Nexus to manage their organizations, billing, and collaboration — all in one place.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  to="/signup"
-                  className="group inline-flex items-center gap-2.5 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-xl shadow-blue-600/25 hover:shadow-[0_0_40px_rgba(59,130,246,0.35)] active:scale-[0.98] text-base"
-                >
-                  Create Account
-                  <ArrowRight className="w-4.5 h-4.5 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 font-medium rounded-xl border border-slate-700/60 hover:border-slate-600/60 transition-all duration-300 text-base"
-                >
-                  Sign In
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[#020617]" />
       </section>
 
       {/* ===== FOOTER ===== */}
