@@ -40,12 +40,12 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-slate-950 relative overflow-x-hidden">
-      {/* Subtle background gradient */}
+      {/* Atmospheric background */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-[18%] w-[28rem] h-[28rem] bg-blue-600/[0.04] rounded-full blur-3xl" />
-        <div className="absolute top-[28%] right-[18%] w-[32rem] h-[32rem] bg-indigo-600/[0.03] rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-[24%] w-[28rem] h-[28rem] bg-cyan-600/[0.04] rounded-full blur-3xl" />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 90% 80% at 50% 50%, transparent 35%, rgba(2,6,23,0.34) 100%)' }} />
+        <div className="absolute -top-24 left-[14%] w-[34rem] h-[34rem] bg-cyan-500/[0.08] rounded-full blur-3xl" />
+        <div className="absolute top-[32%] right-[16%] w-[36rem] h-[36rem] bg-blue-500/[0.07] rounded-full blur-3xl" />
+        <div className="absolute -bottom-20 left-[34%] w-[30rem] h-[30rem] bg-indigo-500/[0.06] rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(34,211,238,0.08),transparent_26%),radial-gradient(circle_at_84%_34%,rgba(59,130,246,0.09),transparent_30%),radial-gradient(ellipse_90%_86%_at_50%_50%,transparent_42%,rgba(2,6,23,0.45)_100%)]" />
       </div>
 
       {/* Desktop sidebar */}
@@ -67,19 +67,21 @@ export default function AppLayout() {
       )}
 
       {/* Main content area */}
-      <div className="relative lg:pl-[110px] min-h-screen">
+      <div className="relative lg:pl-[92px] min-h-screen">
         <Header onMenuClick={() => setMobileSidebarOpen(true)} />
-        <main className="px-3 pb-8 pt-3 lg:px-6 xl:px-8">
-          <div className="max-w-6xl mx-auto">
+        <main className="px-3 pb-10 pt-3 lg:px-6 xl:px-10">
+          <div className="max-w-[1120px] mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.24, ease: 'easeOut' }}
+                initial={{ opacity: 0, y: 18, filter: 'blur(5px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, y: 12, filter: 'blur(4px)' }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               >
-                <Outlet />
+                <div className="rounded-[30px] border border-white/8 bg-slate-950/35 backdrop-blur-[2px] shadow-[0_26px_90px_rgba(2,6,23,0.58)] p-3 sm:p-4 lg:p-6">
+                  <Outlet />
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>
