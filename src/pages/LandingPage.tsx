@@ -209,19 +209,19 @@ function AmbientParticles({ phase }: { phase: number }) {
   );
 }
 
-/* ===== Lightning Bolt SVG ===== */
-const BOLT_PATH = 'M70 0 L52 98 L78 93 L42 232 L74 227 L48 348 L80 342 L24 540';
+/* ===== Lightning Strike SVG ===== */
+const STRIKE_PATH = 'M70 0 L52 98 L78 93 L42 232 L74 227 L48 348 L80 342 L24 540';
 
 function Lightning({ phase }: { phase: number }) {
   if (phase < 1) return null;
-  const showBolt = phase >= 2;
+  const showStrike = phase >= 2;
 
   return (
     <div
       className="absolute pointer-events-none"
       style={{ left: '50%', top: 0, width: 140, height: '65%', zIndex: 5, transform: 'translateX(-50%)' }}
     >
-      {!showBolt && (
+      {!showStrike && (
         <div className="absolute top-1 left-1/2 -translate-x-1/2">
           {[0, 1, 2].map((i) => (
             <div
@@ -241,7 +241,7 @@ function Lightning({ phase }: { phase: number }) {
         </div>
       )}
 
-      {showBolt && (
+      {showStrike && (
         <svg
           viewBox="0 0 140 540"
           fill="none"
@@ -250,14 +250,14 @@ function Lightning({ phase }: { phase: number }) {
           style={{ transformOrigin: 'top center', left: 0 }}
         >
           <defs>
-            <filter id="boltBloom" x="-80%" y="-3%" width="260%" height="106%">
+            <filter id="strikeBloom" x="-80%" y="-3%" width="260%" height="106%">
               <feGaussianBlur stdDeviation="12" />
             </filter>
-            <filter id="boltMidGlow" x="-45%" y="-3%" width="190%" height="106%">
+            <filter id="strikeMidGlow" x="-45%" y="-3%" width="190%" height="106%">
               <feGaussianBlur stdDeviation="4.5" result="glow" />
               <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
-            <linearGradient id="boltGrad" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="strikeGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
               <stop offset="12%" stopColor="#f0f9ff" stopOpacity="0.98" />
               <stop offset="40%" stopColor="#67e8f9" stopOpacity="0.88" />
@@ -265,10 +265,10 @@ function Lightning({ phase }: { phase: number }) {
               <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.08" />
             </linearGradient>
           </defs>
-          <path d={BOLT_PATH} stroke="#7c3aed" strokeWidth="30" fill="none" opacity="0.07" filter="url(#boltBloom)" />
-          <path d={BOLT_PATH} stroke="#22d3ee" strokeWidth="14" fill="none" opacity="0.22" filter="url(#boltBloom)" />
-          <path d={BOLT_PATH} stroke="url(#boltGrad)" strokeWidth="6" fill="none" opacity="0.62" filter="url(#boltMidGlow)" />
-          <path d={BOLT_PATH} stroke="white" strokeWidth="1.4" fill="none" opacity="0.97" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={STRIKE_PATH} stroke="#7c3aed" strokeWidth="30" fill="none" opacity="0.07" filter="url(#strikeBloom)" />
+          <path d={STRIKE_PATH} stroke="#22d3ee" strokeWidth="14" fill="none" opacity="0.22" filter="url(#strikeBloom)" />
+          <path d={STRIKE_PATH} stroke="url(#strikeGrad)" strokeWidth="6" fill="none" opacity="0.62" filter="url(#strikeMidGlow)" />
+          <path d={STRIKE_PATH} stroke="white" strokeWidth="1.4" fill="none" opacity="0.97" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M78 93 L106 145 L91 149" stroke="#67e8f9" strokeWidth="1.2" opacity="0.72" strokeLinecap="round" fill="none" />
           <path d="M52 98 L26 148 L40 152" stroke="#a5b4fc" strokeWidth="0.9" opacity="0.62" strokeLinecap="round" fill="none" />
           <path d="M42 232 L14 282 L28 286" stroke="#7dd3fc" strokeWidth="1" opacity="0.58" strokeLinecap="round" fill="none" />
@@ -960,7 +960,7 @@ export default function LandingPage() {
             }}
           />
         )}
-        {/* Impact flash — brief bloom when bolt hits */}
+        {/* Impact flash — brief bloom when strike hits */}
         {isImpactPhase && (
           <div
             className="absolute inset-0 pointer-events-none animate-impact-flash"
@@ -977,7 +977,7 @@ export default function LandingPage() {
         {/* Elegant energy arcs — fade in with content reveal */}
         <ElegantArcs visible={isRevealPhase} />
 
-        {/* Lightning bolt — phase-aware: pre-flicker + strike */}
+        {/* Lightning strike — phase-aware: pre-flicker + strike */}
         <Lightning phase={introPhase} />
 
         {/* Ambient radial glow — seeds at impact, expands through reveal */}

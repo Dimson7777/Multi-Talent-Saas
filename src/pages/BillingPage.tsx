@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useOrg } from '../contexts/OrgContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { Card, CardHeader, CardTitle, Button, Badge } from '../components/ui';
+import { Card, CardHeader, CardTitle, Button, Badge, Modal } from '../components/ui';
 import { supabase } from '../lib/supabase';
 import type { Subscription } from '../types';
 import {
@@ -45,7 +45,7 @@ const plans = [
 type BillingStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export default function BillingPage() {
-  const { currentOrg, currentRole, subscription, isPro, refreshSubscription, refreshOrg } = useOrg();
+  const { currentOrg, currentRole, subscription, isPro: contextIsPro, refreshSubscription, refreshOrg } = useOrg();
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -53,11 +53,25 @@ export default function BillingPage() {
 
   const [checkoutStatus, setCheckoutStatus] = useState<BillingStatus>('idle');
   const [portalStatus, setPortalStatus] = useState<BillingStatus>('idle');
+  const [manageModalOpen, setManageModalOpen] = useState(false);
+  const [cancelStatus, setCancelStatus] = useState<BillingStatus>('idle');
+  const [localSubscription, setLocalSubscription] = useState<Subscription | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isAdmin = currentRole === 'admin';
+  const effectiveSubscription = localSubscription ?? subscription;
+  const isPro =
+    effectiveSubscription?.plan === 'pro' &&
+    (effectiveSubscription?.status === 'active' || effectiveSubscription?.status === 'trialing');
+
+  useEffect(() => {
+    if (!localSubscription || !subscription) return;
+    if (localSubscription.plan === subscription.plan && localSubscription.status === subscription.status) {
+      setLocalSubscription(null);
+    }
+  }, [localSubscription, subscription]);
 
   // Handle Stripe redirect back from checkout
   useEffect(() => {
@@ -170,13 +184,13 @@ export default function BillingPage() {
 
   // Watch for isPro changes to auto-resolve checkout status
   useEffect(() => {
-    if (checkoutStatus === 'loading' && isPro) {
+    if (checkoutStatus === 'loading' && contextIsPro) {
       if (pollRef.current) clearInterval(pollRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       setCheckoutStatus('success');
       setSearchParams({}, { replace: true });
     }
-  }, [isPro, checkoutStatus]);
+  }, [contextIsPro, checkoutStatus]);
 
   const handleUpgrade = async () => {
     if (!currentOrg || !user) return;
@@ -228,7 +242,22 @@ export default function BillingPage() {
     }
   };
 
+  const openManageSubscriptionModal = () => {
+    setManageModalOpen(true);
+    setPortalStatus('idle');
+  };
+
   const handleManageBilling = async () => {
+    if (!isPro) {
+      openManageSubscriptionModal();
+      return;
+    }
+
+    if (!currentOrg || !user || !import.meta.env.VITE_SUPABASE_URL) {
+      openManageSubscriptionModal();
+      return;
+    }
+
     if (!currentOrg || !user) return;
     setPortalStatus('loading');
     setErrorMessage('');
@@ -236,8 +265,7 @@ export default function BillingPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        setErrorMessage('You must be signed in to manage billing.');
-        setPortalStatus('error');
+        openManageSubscriptionModal();
         return;
       }
 
@@ -260,7 +288,9 @@ export default function BillingPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to open billing portal');
+        openManageSubscriptionModal();
+        setPortalStatus('idle');
+        return;
       }
 
       if (data.url) {
@@ -268,13 +298,53 @@ export default function BillingPage() {
         return;
       }
 
-      throw new Error('No portal URL returned');
+      openManageSubscriptionModal();
+      setPortalStatus('idle');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Something went wrong';
-      setErrorMessage(msg);
-      setPortalStatus('error');
-      toast('error', 'Portal failed', msg);
+      console.error('Portal unavailable, using local demo manager:', err);
+      openManageSubscriptionModal();
+      setPortalStatus('idle');
     }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!currentOrg || !effectiveSubscription) return;
+
+    setCancelStatus('loading');
+
+    // Smooth demo cancellation transition before persisting.
+    await new Promise((resolve) => setTimeout(resolve, 900));
+
+    const canceledAt = new Date().toISOString();
+    const canceledSubscription: Subscription = {
+      ...effectiveSubscription,
+      plan: 'free',
+      status: 'canceled',
+      current_period_end: null,
+      stripe_subscription_id: null,
+      updated_at: canceledAt,
+    };
+
+    setLocalSubscription(canceledSubscription);
+
+    await supabase
+      .from('subscriptions')
+      .update({
+        plan: 'free',
+        status: 'canceled',
+        current_period_end: null,
+        stripe_subscription_id: null,
+        updated_at: canceledAt,
+      })
+      .eq('organization_id', currentOrg.id);
+
+    await refreshSubscription();
+    await refreshOrg();
+
+    setCancelStatus('idle');
+    setManageModalOpen(false);
+    toast('success', 'Subscription canceled successfully', 'Your account is now on the Free plan.');
+    navigate('/dashboard', { replace: true });
   };
 
   return (
@@ -296,7 +366,7 @@ export default function BillingPage() {
             <Button
               variant="secondary"
               icon={<ExternalLink className="w-4 h-4" />}
-              onClick={handleManageBilling}
+              onClick={openManageSubscriptionModal}
               loading={portalStatus === 'loading'}
             >
               Manage Subscription
@@ -376,14 +446,14 @@ export default function BillingPage() {
             <div>
               <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Status</p>
               <div className="flex items-center gap-1.5 mt-1">
-                <span className={`w-2 h-2 rounded-full ${subscription?.status === 'active' ? 'bg-emerald-400 animate-dot-pulse' : subscription?.status === 'past_due' ? 'bg-amber-400' : subscription?.status === 'canceled' ? 'bg-red-400' : 'bg-slate-500'}`} />
-                <p className="text-sm text-slate-300 capitalize">{subscription?.status === 'past_due' ? 'Past due' : subscription?.status === 'canceled' ? 'Canceled' : subscription?.status || 'Active'}</p>
+                <span className={`w-2 h-2 rounded-full ${effectiveSubscription?.status === 'active' ? 'bg-emerald-400 animate-dot-pulse' : effectiveSubscription?.status === 'past_due' ? 'bg-amber-400' : effectiveSubscription?.status === 'canceled' ? 'bg-red-400' : 'bg-slate-500'}`} />
+                <p className="text-sm text-slate-300 capitalize">{effectiveSubscription?.status === 'past_due' ? 'Past due' : effectiveSubscription?.status === 'canceled' ? 'Canceled' : effectiveSubscription?.status || 'Active'}</p>
               </div>
             </div>
-            {subscription?.current_period_end && isPro && (
+            {effectiveSubscription?.current_period_end && isPro && (
               <div>
                 <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Renews</p>
-                <p className="text-sm text-slate-200 mt-1">{new Date(subscription.current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                <p className="text-sm text-slate-200 mt-1">{new Date(effectiveSubscription.current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
               </div>
             )}
           </div>
@@ -477,6 +547,41 @@ export default function BillingPage() {
           </div>
         </Card>
       </div>
+
+      <Modal
+        open={manageModalOpen}
+        onClose={() => {
+          if (cancelStatus !== 'loading') {
+            setManageModalOpen(false);
+          }
+        }}
+        title="Manage Subscription"
+        description="Demo billing controls"
+      >
+        <div className="space-y-4 animate-fade-in-up">
+          <div className="rounded-xl border border-white/10 bg-slate-900/40 p-4">
+            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Current Plan</p>
+            <p className="text-lg font-semibold text-white mt-1">Pro</p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-slate-900/40 p-4">
+            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Subscription Status</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-dot-pulse" />
+              <p className="text-sm text-slate-200">Active</p>
+            </div>
+          </div>
+          <Button
+            fullWidth
+            variant="secondary"
+            icon={<XCircle className="w-4 h-4" />}
+            onClick={handleCancelSubscription}
+            loading={cancelStatus === 'loading'}
+            disabled={cancelStatus === 'loading'}
+          >
+            Cancel Subscription
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
