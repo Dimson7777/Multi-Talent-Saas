@@ -348,18 +348,19 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-7 relative">
       <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-[760px] h-[230px] bg-indigo-500/[0.05] blur-[90px] rounded-full" />
 
-      <div className="relative z-10 flex items-start justify-between gap-4">
+      <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2.5">
             <Badge variant="default">Billing</Badge>
             <Badge variant={isPro ? 'pro' : 'default'} dot={isPro}>{isPro ? 'Pro' : 'Free'}</Badge>
+            <Badge variant="info">Finance</Badge>
             {import.meta.env.DEV && <Badge variant="warning">Test Mode</Badge>}
           </div>
-          <h1 className="text-2xl sm:text-[2rem] font-semibold text-white tracking-[-0.03em]">Billing & Plans</h1>
-          <p className="text-slate-400 text-sm mt-1 font-light">Manage subscription, usage limits, and Stripe billing actions.</p>
+          <h1 className="text-[1.9rem] leading-tight sm:text-[2.1rem] font-semibold text-white tracking-[-0.035em]">Billing & Plans</h1>
+          <p className="text-slate-400 text-sm mt-1.5 font-light">Manage subscription, usage limits, and Stripe billing actions.</p>
         </div>
         {isAdmin && (
           isPro ? (
@@ -429,8 +430,8 @@ export default function BillingPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-        <Card glow={isPro ? 'blue' : null} className="xl:col-span-4 bg-slate-900/50 border-white/10 backdrop-blur-xl">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <Card glow={isPro ? 'blue' : null} className="xl:col-span-4 bg-slate-900/50 border-white/10 backdrop-blur-xl min-h-[262px]">
           <CardHeader className="mb-4">
             <div className="flex items-center gap-2.5">
               <CreditCard className="w-4 h-4 text-slate-500" />
@@ -459,7 +460,7 @@ export default function BillingPage() {
           </div>
         </Card>
 
-        <Card className="xl:col-span-4 bg-gradient-to-br from-blue-600/8 via-slate-900/55 to-cyan-600/8 border-blue-400/20 backdrop-blur-xl" glow={!isPro ? 'blue' : null}>
+        <Card className="xl:col-span-4 bg-gradient-to-br from-blue-600/8 via-slate-900/55 to-cyan-600/8 border-blue-400/20 backdrop-blur-xl min-h-[262px]" glow={!isPro ? 'blue' : null}>
           <CardHeader className="mb-4">
             <div className="flex items-center gap-2.5">
               <Crown className="w-4 h-4 text-blue-300" />
@@ -489,7 +490,7 @@ export default function BillingPage() {
           )}
         </Card>
 
-        <Card className="xl:col-span-4 bg-slate-900/50 border-white/10 backdrop-blur-xl">
+        <Card className="xl:col-span-4 bg-slate-900/50 border-white/10 backdrop-blur-xl min-h-[262px]">
           <CardHeader className="mb-4">
             <div className="flex items-center gap-2.5">
               <Zap className="w-4 h-4 text-cyan-300" />
@@ -523,21 +524,21 @@ export default function BillingPage() {
             </div>
           </CardHeader>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-4 rounded-lg border border-slate-700/40 bg-slate-800/35">
+            <div className="p-4 rounded-xl border border-slate-700/40 bg-slate-800/35 transition-all duration-200 hover:border-cyan-300/25">
               <p className="text-sm font-medium text-slate-200 mb-1">Start Checkout</p>
               <p className="text-xs text-slate-500 mb-3">Open Stripe Checkout for plan upgrades.</p>
               <Button fullWidth icon={<ArrowRight className="w-4 h-4" />} onClick={handleUpgrade} loading={checkoutStatus === 'loading'} disabled={!isAdmin || isPro}>
                 {isPro ? 'Current Plan' : 'Upgrade to Pro'}
               </Button>
             </div>
-            <div className="p-4 rounded-lg border border-slate-700/40 bg-slate-800/35">
+            <div className="p-4 rounded-xl border border-slate-700/40 bg-slate-800/35 transition-all duration-200 hover:border-cyan-300/25">
               <p className="text-sm font-medium text-slate-200 mb-1">Manage Subscription</p>
               <p className="text-xs text-slate-500 mb-3">Open Stripe customer portal.</p>
               <Button fullWidth variant="secondary" icon={<ExternalLink className="w-4 h-4" />} onClick={handleManageBilling} loading={portalStatus === 'loading'} disabled={!isAdmin || !isPro}>
                 Open Portal
               </Button>
             </div>
-            <div className="p-4 rounded-lg border border-slate-700/40 bg-slate-800/35">
+            <div className="p-4 rounded-xl border border-slate-700/40 bg-slate-800/35 transition-all duration-200 hover:border-cyan-300/25">
               <p className="text-sm font-medium text-slate-200 mb-1">Role Access</p>
               <p className="text-xs text-slate-500 mb-3">Billing actions are available to organization admins only.</p>
               <Button fullWidth variant="secondary" disabled>

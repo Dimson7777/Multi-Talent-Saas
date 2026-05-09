@@ -166,7 +166,7 @@ export default function TeamPage() {
   const isSoloWorkspace = members.length <= 1;
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-7 relative">
       <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-[760px] h-[230px] bg-blue-500/[0.05] blur-[90px] rounded-full" />
 
       <div className="relative z-10 flex items-start justify-between gap-4">
@@ -237,7 +237,7 @@ export default function TeamPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.4, ease: 'easeOut' }} className="xl:col-span-8">
           <Card padding={false} className="bg-slate-900/50 border-white/10 backdrop-blur-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-800/40 bg-slate-900/35">

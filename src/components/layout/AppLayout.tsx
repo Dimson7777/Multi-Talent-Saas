@@ -67,10 +67,10 @@ export default function AppLayout() {
       )}
 
       {/* Main content area */}
-      <div className="relative lg:pl-[92px] min-h-screen">
+      <div className="relative lg:pl-[96px] min-h-screen">
         <Header onMenuClick={() => setMobileSidebarOpen(true)} />
-        <main className="px-3 pb-10 pt-3 lg:px-6 xl:px-10">
-          <div className="max-w-[1120px] mx-auto">
+        <main className="px-3 pb-10 pt-2 lg:px-5 xl:px-8">
+          <div className="max-w-[1180px] mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
@@ -79,7 +79,8 @@ export default function AppLayout() {
                 exit={{ opacity: 0, y: 12, filter: 'blur(4px)' }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="rounded-[30px] border border-white/8 bg-slate-950/35 backdrop-blur-[2px] shadow-[0_26px_90px_rgba(2,6,23,0.58)] p-3 sm:p-4 lg:p-6">
+                <div className="noise relative overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/45 backdrop-blur-[3px] shadow-[0_28px_95px_rgba(2,6,23,0.62)] p-3 sm:p-4 lg:p-5 xl:p-6">
+                  <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/22 to-transparent" />
                   <Outlet />
                 </div>
               </motion.div>

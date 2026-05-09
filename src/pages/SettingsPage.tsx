@@ -65,7 +65,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl relative">
+    <div className="space-y-7 relative">
       <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-[720px] h-[210px] bg-indigo-500/[0.05] blur-[90px] rounded-full" />
 
       <div className="relative z-10 flex items-start justify-between gap-4">

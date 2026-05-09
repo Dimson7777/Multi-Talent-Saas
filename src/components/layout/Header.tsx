@@ -70,10 +70,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
     : profile?.email?.[0]?.toUpperCase() || '?';
 
   return (
-    <header className="sticky top-4 z-30 px-3 lg:px-0">
-      <div className="h-[70px] max-w-6xl mx-auto rounded-[26px] border border-white/10 bg-slate-950/45 backdrop-blur-2xl shadow-[0_26px_80px_rgba(2,6,23,0.55)] flex items-center justify-between px-4 lg:px-5 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_12%_12%,rgba(45,212,191,0.13),transparent_28%),radial-gradient(circle_at_88%_78%,rgba(59,130,246,0.12),transparent_36%)]" />
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="sticky top-2 z-30 px-3 lg:px-5 xl:px-8">
+      <div className="h-[64px] max-w-[1180px] mx-auto rounded-[22px] border border-white/10 bg-slate-950/55 backdrop-blur-2xl shadow-[0_26px_80px_rgba(2,6,23,0.55)] flex items-center justify-between px-3.5 lg:px-4 relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_12%_12%,rgba(45,212,191,0.11),transparent_28%),radial-gradient(circle_at_88%_78%,rgba(59,130,246,0.11),transparent_36%)]" />
+      <div className="flex items-center gap-2.5 min-w-0">
         <button
           onClick={onMenuClick}
           className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors"
@@ -84,7 +84,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div ref={orgDropdownRef} className="relative">
           <button
             onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-white/10 bg-slate-900/35 hover:bg-slate-800/55 transition-colors min-w-0"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 bg-slate-900/45 hover:bg-slate-800/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 transition-colors min-w-0"
           >
             <Layers className="w-4 h-4 text-cyan-300/80" />
             <span className="text-sm font-medium text-white hidden sm:inline truncate max-w-[180px]">{currentOrg?.name}</span>
@@ -122,14 +122,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </div>
       </div>
 
-      <button className="hidden md:flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-white/10 bg-slate-900/30 text-slate-300 hover:text-white hover:bg-slate-800/50 transition-colors">
+      <button className="hidden md:flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-slate-600/50 bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800/60 hover:border-cyan-300/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45 focus-visible:shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_0_20px_rgba(56,189,248,0.22)] transition-all duration-200">
         <Search className="w-4 h-4" />
-        <span className="text-sm">Command</span>
-        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800/90 border border-white/10 text-slate-500">Ctrl K</span>
+        <span className="text-sm font-medium">Command</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800/90 border border-white/10 text-slate-500 font-mono">Ctrl K</span>
       </button>
 
-      <div className="flex items-center gap-2">
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-emerald-400/20 bg-emerald-500/[0.08] text-xs text-emerald-200/90 shadow-[0_10px_24px_rgba(16,185,129,0.15)]">
+      <div className="flex items-center gap-1.5 lg:gap-2">
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.08] text-[11px] text-emerald-200/90 shadow-[0_10px_24px_rgba(16,185,129,0.15)]">
           <Sparkles className="w-3.5 h-3.5 text-emerald-300/80" />
           Workspace live
         </div>
@@ -137,7 +137,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div ref={notifDropdownRef} className="relative">
           <button
             onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
-            className="relative p-2.5 rounded-2xl border border-white/10 bg-slate-900/35 text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors"
+            className="relative p-2.5 rounded-xl border border-white/10 bg-slate-900/40 text-slate-400 hover:text-white hover:bg-slate-800/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 transition-colors"
           >
             <Bell className="w-[18px] h-[18px]" />
             {unreadCount > 0 && (
@@ -192,7 +192,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
         <div className="w-px h-6 bg-slate-800/60 mx-1 hidden sm:block" />
 
-        <div className="flex items-center gap-2.5 pl-1 pr-1.5 py-1 rounded-2xl border border-white/10 bg-slate-900/35">
+        <div className="flex items-center gap-2 pl-1 pr-1.5 py-1 rounded-xl border border-white/10 bg-slate-900/40">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/30 to-blue-500/20 flex items-center justify-center text-xs font-semibold text-slate-100 border border-cyan-300/30 shrink-0">
             {initials}
           </div>
@@ -202,7 +202,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </div>
           <button
             onClick={signOut}
-            className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+            className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40 transition-all duration-200"
             title="Sign out"
           >
             <LogOut className="w-4 h-4" />

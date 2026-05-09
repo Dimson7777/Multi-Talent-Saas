@@ -31,15 +31,15 @@ function Skeleton({ className = '' }: { className?: string }) {
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <div className="flex items-center justify-between">
         <div>
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-4 w-72 mt-2" />
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <div className="lg:col-span-3 space-y-4">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="xl:col-span-3 space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="p-5 rounded-xl border border-slate-800/40 bg-slate-900/50">
               <Skeleton className="h-4 w-20 mb-4" />
@@ -48,7 +48,7 @@ function DashboardSkeleton() {
             </div>
           ))}
         </div>
-        <div className="lg:col-span-6 p-5 rounded-xl border border-slate-800/40 bg-slate-900/50">
+        <div className="xl:col-span-6 p-5 rounded-xl border border-slate-800/40 bg-slate-900/50">
           <Skeleton className="h-5 w-28 mb-5" />
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-start gap-3 mb-4">
@@ -60,7 +60,7 @@ function DashboardSkeleton() {
             </div>
           ))}
         </div>
-        <div className="lg:col-span-3 space-y-4">
+        <div className="xl:col-span-3 space-y-4">
           {[1, 2].map((i) => (
             <div key={i} className="p-5 rounded-xl border border-slate-800/40 bg-slate-900/50">
               <Skeleton className="h-4 w-20 mb-4" />
@@ -118,7 +118,7 @@ function QuickAction({ icon, label, onClick, color = 'blue' }: {
   return (
     <button
       onClick={onClick}
-      className={`group relative overflow-hidden flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(2,6,23,0.45)] ${
+      className={`group relative overflow-hidden flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(2,6,23,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 ${
         color === 'blue' ? 'bg-blue-500/[0.07] hover:bg-blue-500/[0.12] border border-blue-400/20 hover:border-blue-300/35' :
         color === 'emerald' ? 'bg-emerald-500/[0.07] hover:bg-emerald-500/[0.12] border border-emerald-400/20 hover:border-emerald-300/35' :
         'bg-slate-800/50 hover:bg-slate-800/70 border border-white/10 hover:border-slate-300/20'
@@ -133,7 +133,7 @@ function QuickAction({ icon, label, onClick, color = 'blue' }: {
         {icon}
       </div>
       <span className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors flex-1 text-left">{label}</span>
-      <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-all duration-300 group-hover:translate-x-0.5" />
+      <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-300 transition-all duration-300 group-hover:translate-x-1" />
     </button>
   );
 }
@@ -178,26 +178,27 @@ export default function DashboardPage() {
   const isEmpty = members.length <= 1 && activityLogs.length === 0;
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-7 relative">
       <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-[780px] h-[260px] bg-cyan-500/[0.06] blur-[90px] rounded-full" />
       {/* Header */}
-      <div className="relative z-10 flex items-start justify-between gap-4">
+      <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2.5">
             <Badge variant="default">Overview</Badge>
             <Badge variant={isPro ? 'pro' : 'default'} dot={isPro}>{isPro ? 'Pro' : 'Free'}</Badge>
+            <Badge variant="info">Operations</Badge>
           </div>
-          <h1 className="text-2xl sm:text-[2rem] font-semibold tracking-[-0.03em] bg-gradient-to-r from-slate-200 via-white to-slate-400 bg-clip-text text-transparent flex items-center gap-3">
+          <h1 className="text-[1.9rem] leading-tight sm:text-[2.1rem] font-semibold tracking-[-0.035em] bg-gradient-to-r from-slate-200 via-white to-slate-400 bg-clip-text text-transparent flex items-center gap-3">
             Command Center
             {isPro && (
               <Badge variant="pro" dot pulse>Pro</Badge>
             )}
           </h1>
-          <p className="text-slate-400/90 text-sm mt-1 font-light tracking-[0.01em]">
+          <p className="text-slate-400/90 text-sm mt-1.5 font-light tracking-[0.01em]">
             Live workspace operations for {currentOrg?.name || 'your organization'}
           </p>
         </div>
-        <div className="hidden sm:flex items-center gap-2">
+        <div className="hidden sm:flex items-center gap-2.5 self-start">
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-md border ${
             subscription?.status === 'active' ? 'bg-emerald-500/8 text-emerald-300 border-emerald-400/20' :
             subscription?.status === 'past_due' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/15' :
@@ -212,7 +213,7 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={() => navigate('/team')}
-            className="relative overflow-hidden inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium bg-blue-600/12 hover:bg-blue-600/20 text-blue-200 border border-blue-400/25 hover:border-blue-300/35 transition-all duration-200"
+            className="relative overflow-hidden inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium bg-blue-600/12 hover:bg-blue-600/20 text-blue-200 border border-blue-400/25 hover:border-blue-300/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 transition-all duration-200"
           >
             <span className="pointer-events-none absolute inset-0 quick-shimmer" />
             <UserPlus className="w-3.5 h-3.5" />
@@ -222,7 +223,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI row */}
-      <div className="relative z-10 grid grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="relative z-10 grid grid-cols-2 xl:grid-cols-4 gap-4">
         {[
           { label: 'Members', value: members.length, icon: <Users className="w-4 h-4 text-blue-300" />, tone: 'blue' },
           { label: 'Plan', value: isPro ? 'Pro' : 'Free', icon: <Crown className="w-4 h-4 text-violet-300" />, tone: 'violet' },
@@ -235,24 +236,24 @@ export default function DashboardPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.35, ease: 'easeOut', delay: i * 0.05 }}
-            className="rounded-xl border border-white/10 bg-slate-900/55 backdrop-blur-xl p-3.5"
+            className="h-[112px] rounded-2xl border border-white/10 bg-slate-900/55 backdrop-blur-xl p-3.5"
           >
             <div className="flex items-center justify-between">
               <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">{kpi.label}</p>
-              <div className="w-7 h-7 rounded-lg bg-slate-800/70 border border-white/10 flex items-center justify-center">{kpi.icon}</div>
+              <div className="w-8 h-8 rounded-xl bg-slate-800/70 border border-white/10 flex items-center justify-center">{kpi.icon}</div>
             </div>
-            <p className="text-xl font-semibold tracking-[-0.02em] text-slate-100 mt-2">{kpi.value}</p>
+            <p className="text-[1.4rem] leading-none font-semibold tracking-[-0.03em] text-slate-100 mt-3">{kpi.value}</p>
           </motion.div>
         ))}
       </div>
 
       {/* Three-column command center layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
         {/* ===== LEFT COLUMN: Workspace Overview ===== */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="xl:col-span-3 space-y-4">
           {/* Team Stats */}
-          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0 }} className="p-5 rounded-xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0 }} className="p-5 rounded-2xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-4 h-4 text-blue-400" />
               <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Team</h3>
@@ -307,7 +308,7 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* Plan Card */}
-          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.07 }} className={`p-5 rounded-xl border backdrop-blur-xl ${
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.07 }} className={`p-5 rounded-2xl border backdrop-blur-xl ${
             isPro
               ? 'bg-gradient-to-br from-blue-600/8 via-slate-900/50 to-cyan-600/5 border-white/10'
               : 'bg-slate-900/50 border-white/10'
@@ -331,7 +332,7 @@ export default function DashboardPage() {
             {!isPro && (
               <button
                 onClick={() => navigate('/billing')}
-                className="relative overflow-hidden w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-300 text-xs font-medium rounded-lg border border-blue-400/20 hover:border-blue-300/35 transition-all duration-200"
+                className="relative overflow-hidden w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-300 text-xs font-medium rounded-lg border border-blue-400/20 hover:border-blue-300/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 transition-all duration-200"
               >
                 <span className="pointer-events-none absolute inset-0 quick-shimmer" />
                 <Sparkles className="w-3.5 h-3.5" />
@@ -342,8 +343,8 @@ export default function DashboardPage() {
         </div>
 
         {/* ===== CENTER COLUMN: Activity Timeline ===== */}
-        <div className="lg:col-span-6">
-          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.14 }} className="p-5 rounded-xl bg-slate-900/50 border border-white/10 backdrop-blur-xl h-full shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
+        <div className="xl:col-span-6">
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.14 }} className="p-5 rounded-2xl bg-slate-900/50 border border-white/10 backdrop-blur-xl h-full shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
             <div className="flex items-center gap-2 mb-5">
               <Activity className="w-4 h-4 text-cyan-400" />
               <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Activity Timeline</h3>
@@ -352,19 +353,25 @@ export default function DashboardPage() {
 
             {activityLogs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
-                {/* Animated empty state */}
-                <div className="relative mb-5">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-800/50 border border-white/10 flex items-center justify-center relative z-10">
-                    <Activity className="w-7 h-7 text-slate-600 animate-float" />
-                  </div>
-                  <span className="absolute inset-0 rounded-2xl sonar-ring" />
-                  <span className="absolute inset-0 rounded-2xl sonar-ring-delay" />
-                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500/20 border border-blue-500/30 animate-dot-pulse" />
+                <div className="relative mb-5 h-16 w-44 rounded-2xl border border-white/10 bg-slate-900/55 overflow-hidden">
+                  <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-cyan-500/0 via-cyan-400/40 to-cyan-500/0" />
+                  <span className="absolute left-10 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-cyan-400/80 shadow-[0_0_12px_rgba(34,211,238,0.7)] animate-dot-pulse" />
+                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-blue-400/80 shadow-[0_0_12px_rgba(59,130,246,0.65)] animate-dot-pulse" style={{ animationDelay: '220ms' }} />
+                  <span className="absolute right-10 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-indigo-400/80 shadow-[0_0_12px_rgba(129,140,248,0.65)] animate-dot-pulse" style={{ animationDelay: '420ms' }} />
+                  <span className="absolute left-8 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full border border-cyan-400/20" />
+                  <span className="absolute right-8 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full border border-indigo-400/20" />
                 </div>
-                <p className="text-sm font-medium text-slate-300 mb-1 tracking-[-0.01em]">No activity yet</p>
-                <p className="text-xs text-slate-500 text-center max-w-[230px] font-light leading-relaxed">
-                  Actions like inviting members, upgrading plans, and role changes will appear here in real time.
+                <p className="text-sm font-medium text-slate-300 mb-1 tracking-[-0.01em]">No activity events yet</p>
+                <p className="text-xs text-slate-500 text-center max-w-[260px] font-light leading-relaxed">
+                  Invite collaborators or update workspace settings to start your operational timeline.
                 </p>
+                <button
+                  onClick={() => navigate('/team')}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200 hover:bg-cyan-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 transition-colors"
+                >
+                  Invite first teammate
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             ) : (
               <div className="space-y-2 relative">
@@ -379,7 +386,7 @@ export default function DashboardPage() {
                     label: log.action.replace(/_/g, ' '),
                   };
                   return (
-                    <div key={log.id} className="flex items-start gap-3 py-2.5 px-3 rounded-lg border border-white/5 bg-slate-900/45 hover:bg-slate-900/70 hover:border-cyan-400/20 transition-all duration-200 animate-fade-in-up" style={{ animationDelay: `${i * 40}ms` }}>
+                    <div key={log.id} className="flex items-start gap-3 py-2.5 px-3 rounded-xl border border-white/5 bg-slate-900/45 hover:bg-slate-900/70 hover:border-cyan-400/20 transition-all duration-200 animate-fade-in-up" style={{ animationDelay: `${i * 40}ms` }}>
                       <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 z-10 border border-white/10 ${config.color}`}>
                         {config.icon}
                       </div>
@@ -402,9 +409,9 @@ export default function DashboardPage() {
         </div>
 
         {/* ===== RIGHT COLUMN: Quick Actions & Status ===== */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="xl:col-span-3 space-y-4">
           {/* Quick Actions */}
-          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.21 }} className="p-5 rounded-xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.21 }} className="p-5 rounded-2xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
             <div className="flex items-center gap-2 mb-4">
               <Rocket className="w-4 h-4 text-blue-400" />
               <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Quick Actions</h3>
@@ -431,17 +438,17 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* Usage / Stats */}
-          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.28 }} className="p-5 rounded-xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.28 }} className="p-5 rounded-2xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-[0_14px_40px_rgba(2,6,23,0.35)]">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-4 h-4 text-cyan-400" />
               <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Usage</h3>
             </div>
 
             {/* Member usage bar */}
-            <div className="mb-4">
+            <div className="mb-4 rounded-xl border border-white/10 bg-slate-900/40 p-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs text-slate-400">Team Members</span>
-                <span className="text-xs font-medium text-white">{members.length}{isPro ? '' : '/5'}</span>
+                <span className="text-xs font-semibold text-white">{members.length}{isPro ? '' : '/5'}</span>
               </div>
               <div className="h-2 rounded-full bg-slate-800/70 overflow-hidden border border-white/10">
                 <div
@@ -456,10 +463,10 @@ export default function DashboardPage() {
             </div>
 
             {/* Plan status */}
-            <div className="mb-4">
+            <div className="mb-4 rounded-xl border border-white/10 bg-slate-900/40 p-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs text-slate-400">Plan Tier</span>
-                <span className="text-xs font-medium text-white">{isPro ? 'Pro' : 'Free'}</span>
+                <span className="text-xs font-semibold text-white">{isPro ? 'Pro' : 'Free'}</span>
               </div>
               <div className="h-2 rounded-full bg-slate-800/70 overflow-hidden border border-white/10">
                 <div
@@ -472,10 +479,10 @@ export default function DashboardPage() {
             </div>
 
             {/* Activity count */}
-            <div>
+            <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs text-slate-400">Recent Events</span>
-                <span className="text-xs font-medium text-white">{activityLogs.length}</span>
+                <span className="text-xs font-semibold text-white">{activityLogs.length}</span>
               </div>
               <div className="h-2 rounded-full bg-slate-800/70 overflow-hidden border border-white/10">
                 <div
@@ -488,7 +495,7 @@ export default function DashboardPage() {
 
           {/* Empty state suggestions (shown when team is small) */}
           {isEmpty && (
-            <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.35 }} className="p-5 rounded-xl bg-gradient-to-br from-blue-600/5 via-slate-900/50 to-cyan-600/5 border border-white/10 backdrop-blur-xl">
+            <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.45, ease: 'easeOut', delay: 0.35 }} className="p-5 rounded-2xl bg-gradient-to-br from-blue-600/5 via-slate-900/50 to-cyan-600/5 border border-white/10 backdrop-blur-xl">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 text-blue-400 animate-float" />
                 <h3 className="text-sm font-semibold tracking-[-0.02em] text-white">Get Started</h3>
@@ -505,11 +512,11 @@ export default function DashboardPage() {
                   <button
                     key={i}
                     onClick={() => navigate(item.action)}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all duration-200"
+                    className="group flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-slate-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 transition-all duration-200"
                   >
                     {item.icon}
                     {item.label}
-                    <ArrowRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                    <ArrowRight className="w-3 h-3 ml-auto opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                   </button>
                 ))}
               </div>

@@ -37,7 +37,7 @@ export default function Sidebar({ mobile = false, onClose }: SidebarProps) {
       className={`z-40 flex flex-col transition-all duration-300 ${
         mobile
           ? 'h-full w-[280px] rounded-none border-r border-white/10 bg-slate-950/90 backdrop-blur-2xl shadow-[0_24px_60px_rgba(2,6,23,0.55)]'
-          : `fixed left-4 top-1/2 -translate-y-1/2 ${expanded ? 'w-[214px]' : 'w-[74px]'} rounded-[26px] border border-white/10 bg-slate-950/45 backdrop-blur-2xl shadow-[0_24px_90px_rgba(2,6,23,0.7)]`
+          : `fixed left-4 top-5 bottom-5 ${expanded ? 'w-[214px]' : 'w-[74px]'} rounded-[24px] border border-white/10 bg-slate-950/45 backdrop-blur-2xl shadow-[0_24px_90px_rgba(2,6,23,0.7)]`
       }`}
     >
       <div className={`flex items-center gap-3 ${expanded ? 'px-4' : 'px-3'} h-16 shrink-0 ${mobile ? 'border-b border-slate-800/40' : 'border-b border-white/10'}`}>
