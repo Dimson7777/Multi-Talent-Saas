@@ -84,21 +84,25 @@ export default function Sidebar({ mobile = false, onClose }: SidebarProps) {
               to={item.to}
               onClick={mobile && onClose ? onClose : undefined}
               title={!expanded && !mobile ? item.label : undefined}
-              className={`group flex items-center ${expanded ? 'gap-3 px-3.5' : 'justify-center px-0'} py-3 rounded-2xl text-sm font-medium transition-all duration-300 relative animate-fade-in-up stagger-${i + 1} ${
+              className={`group flex items-center ${expanded ? 'gap-3 px-3.5' : 'justify-center px-0'} py-3 rounded-2xl text-sm font-medium border transition-all duration-300 relative animate-fade-in-up stagger-${i + 1} ${
                 isActive
-                  ? 'text-cyan-100 bg-gradient-to-r from-cyan-500/20 via-blue-500/12 to-indigo-500/10 shadow-[0_0_0_1px_rgba(56,189,248,0.35),0_14px_28px_rgba(14,116,144,0.25)]'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/45'
+                  ? 'text-white border-cyan-300/50 bg-gradient-to-r from-cyan-500/26 via-sky-500/18 to-indigo-500/10 shadow-[0_0_0_1px_rgba(125,211,252,0.45),0_18px_32px_rgba(8,47,73,0.42)]'
+                  : 'text-slate-400 border-transparent hover:text-white hover:border-slate-400/20 hover:bg-slate-800/55 hover:shadow-[0_10px_20px_rgba(2,6,23,0.35)]'
               }`}
             >
               {isActive && (
-                <div className={`absolute ${expanded ? 'left-0 top-1/2 -translate-y-1/2 w-[2px] h-5' : 'left-1/2 -translate-x-1/2 bottom-1.5 w-5 h-[2px]'} bg-cyan-300/90 rounded-full shadow-[0_0_14px_rgba(103,232,249,0.9)]`} />
+                <div className={`absolute ${expanded ? 'left-0 top-1/2 -translate-y-1/2 w-[3px] h-6' : 'left-1/2 -translate-x-1/2 bottom-1.5 w-6 h-[3px]'} bg-cyan-200 rounded-full shadow-[0_0_18px_rgba(165,243,252,0.95)]`} />
               )}
 
-              <item.icon
-                className={`w-[18px] h-[18px] shrink-0 transition-colors duration-200 ${
-                  isActive ? 'text-cyan-300' : 'text-slate-500 group-hover:text-white'
+              <span
+                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+                  isActive
+                    ? 'bg-cyan-200/12 text-cyan-100 shadow-[0_0_16px_rgba(34,211,238,0.55)]'
+                    : 'text-slate-500 group-hover:text-cyan-100 group-hover:scale-105 group-hover:bg-cyan-400/10 group-hover:shadow-[0_0_14px_rgba(34,211,238,0.28)]'
                 }`}
-              />
+              >
+                <item.icon className="w-[18px] h-[18px]" />
+              </span>
 
               {expanded && <span className="truncate">{item.label}</span>}
             </NavLink>

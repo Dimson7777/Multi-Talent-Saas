@@ -1,23 +1,69 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOrg } from '../../contexts/OrgContext';
-import { Bell, LogOut, ChevronDown, Layers, Menu, CheckCheck, Search, Sparkles } from 'lucide-react';
+import { Bell, LogOut, Menu, CheckCheck, Search, Command, X, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Notification } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 type HeaderProps = {
   onMenuClick: () => void;
 };
 
+type ThemeMode = 'dark' | 'light';
+type CommandCategory = 'Navigation' | 'System' | 'Account';
+type CommandActionId =
+  | 'dashboard'
+  | 'team'
+  | 'billing'
+  | 'toggle-theme'
+  | 'refresh-data'
+  | 'system-status'
+  | 'user-settings'
+  | 'support-ticket'
+  | 'logout';
+
+interface CommandAction {
+  id: CommandActionId;
+  label: string;
+  category: CommandCategory;
+}
+
+const commandActions: CommandAction[] = [
+  { id: 'dashboard', label: 'Go to Dashboard', category: 'Navigation' },
+  { id: 'team', label: 'Team Management', category: 'Navigation' },
+  { id: 'billing', label: 'Billing & Plans', category: 'Navigation' },
+  { id: 'toggle-theme', label: 'Toggle Dark/Light Mode', category: 'System' },
+  { id: 'refresh-data', label: 'Refresh Data', category: 'System' },
+  { id: 'system-status', label: 'System Status', category: 'System' },
+  { id: 'user-settings', label: 'User Settings', category: 'Account' },
+  { id: 'support-ticket', label: 'Support Ticket', category: 'Account' },
+  { id: 'logout', label: 'Logout', category: 'Account' },
+];
+
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
-  const { organizations, currentOrg, currentRole, switchOrg } = useOrg();
-  const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
+  const { currentOrg } = useOrg();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState('');
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const stored = localStorage.getItem('nexus-theme');
+    return stored === 'light' ? 'light' : 'dark';
+  });
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const orgDropdownRef = useRef<HTMLDivElement>(null);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
+  const commandPaletteRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = themeMode;
+    document.documentElement.classList.toggle('light-mode', themeMode === 'light');
+    localStorage.setItem('nexus-theme', themeMode);
+  }, [themeMode]);
 
   useEffect(() => {
     if (!currentOrg || !user) return;
@@ -36,15 +82,30 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (orgDropdownRef.current && !orgDropdownRef.current.contains(e.target as Node)) {
-        setOrgDropdownOpen(false);
-      }
       if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target as Node)) {
         setNotifDropdownOpen(false);
+      }
+      if (commandPaletteRef.current && !commandPaletteRef.current.contains(e.target as Node)) {
+        setCommandPaletteOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+      if (e.key === 'Escape') {
+        setCommandPaletteOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
   const markAsRead = async (id: string) => {
@@ -64,6 +125,42 @@ export default function Header({ onMenuClick }: HeaderProps) {
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const routeLabelMap: Record<string, string> = {
+    '/dashboard': 'Dashboard',
+    '/team': 'Team',
+    '/billing': 'Billing',
+    '/settings': 'Settings',
+  };
+  const currentPageLabel = routeLabelMap[location.pathname] || 'Dashboard';
+  const breadcrumbItems = [
+    { label: 'Organizations', to: '/' },
+    { label: currentOrg?.name || 'sggsg63632', to: '/dashboard' },
+    { label: currentPageLabel, to: location.pathname },
+  ];
+
+  const filteredActions = commandActions.filter((action) =>
+    `${action.label} ${action.category}`.toLowerCase().includes(commandQuery.toLowerCase().trim())
+  );
+
+  const groupedActions: Record<CommandCategory, CommandAction[]> = {
+    Navigation: filteredActions.filter((action) => action.category === 'Navigation'),
+    System: filteredActions.filter((action) => action.category === 'System'),
+    Account: filteredActions.filter((action) => action.category === 'Account'),
+  };
+
+  const executeCommand = async (id: CommandActionId) => {
+    if (id === 'dashboard') navigate('/dashboard');
+    if (id === 'team') navigate('/team');
+    if (id === 'billing') navigate('/billing');
+    if (id === 'toggle-theme') setThemeMode((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    if (id === 'refresh-data') navigate(0);
+    if (id === 'system-status') navigate('/dashboard');
+    if (id === 'user-settings') navigate('/settings');
+    if (id === 'support-ticket') navigate('/settings');
+    if (id === 'logout') await signOut();
+    setCommandPaletteOpen(false);
+    setCommandQuery('');
+  };
 
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -81,59 +178,45 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <Menu className="w-5 h-5" />
         </button>
 
-        <div ref={orgDropdownRef} className="relative">
-          <button
-            onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 bg-slate-900/45 hover:bg-slate-800/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 transition-colors min-w-0"
-          >
-            <Layers className="w-4 h-4 text-cyan-300/80" />
-            <span className="text-sm font-medium text-white hidden sm:inline truncate max-w-[180px]">{currentOrg?.name}</span>
-            <span className="text-xs text-slate-500 capitalize hidden md:inline">({currentRole})</span>
-            <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${orgDropdownOpen ? 'rotate-180' : ''}`} />
-          </button>
-
-          {orgDropdownOpen && organizations.length > 1 && (
-            <div className="absolute top-full left-0 mt-2 w-64 glass-strong rounded-xl shadow-2xl shadow-black/40 py-1.5 z-50 animate-fade-in-down">
-              <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
-                Organizations
+        <div className="flex items-center gap-2 min-w-0">
+          <nav className="flex items-center min-w-0">
+            {breadcrumbItems.map((item, index) => (
+              <div key={`${item.label}-${index}`} className="flex items-center min-w-0">
+                {index > 0 && <ChevronRight className="w-3 h-3 text-slate-600 mx-1.5 shrink-0" />}
+                <button
+                  onClick={() => navigate(item.to)}
+                  className={`text-sm transition-colors truncate max-w-[130px] sm:max-w-[170px] ${
+                    index === breadcrumbItems.length - 1
+                      ? 'text-slate-200 font-medium'
+                      : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  {item.label}
+                </button>
               </div>
-              {organizations.map((m) => {
-                const org = m.organizations as unknown as { id: string; name: string };
-                const isActive = currentOrg?.id === org.id;
-                return (
-                  <button
-                    key={m.organization_id}
-                    onClick={() => {
-                      switchOrg(m.organization_id);
-                      setOrgDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors ${
-                      isActive ? 'bg-blue-600/10 text-blue-400' : 'text-slate-300 hover:bg-slate-800/60'
-                    }`}
-                  >
-                    <Layers className="w-4 h-4 shrink-0" />
-                    <span className="truncate flex-1 text-left">{org.name}</span>
-                    <span className="text-[10px] text-slate-500 uppercase font-medium">{m.role}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            ))}
+          </nav>
+
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg border border-emerald-400/20 bg-emerald-500/[0.08] text-[11px] text-emerald-200/90">
+            <span className="relative flex h-2 w-2">
+              <span className="status-dot-pulse absolute inset-0 rounded-full bg-emerald-300" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" />
+            </span>
+            Live
+          </div>
         </div>
       </div>
 
-      <button className="hidden md:flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-slate-600/50 bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800/60 hover:border-cyan-300/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45 focus-visible:shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_0_20px_rgba(56,189,248,0.22)] transition-all duration-200">
+      <button
+        onClick={() => setCommandPaletteOpen(true)}
+        className="hidden md:flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-slate-600/50 bg-slate-900/50 text-slate-300 hover:text-white hover:bg-slate-800/60 hover:border-cyan-300/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45 focus-visible:shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_0_20px_rgba(56,189,248,0.22)] transition-all duration-200"
+      >
         <Search className="w-4 h-4" />
         <span className="text-sm font-medium">Command</span>
         <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800/90 border border-white/10 text-slate-500 font-mono">Ctrl K</span>
       </button>
 
       <div className="flex items-center gap-1.5 lg:gap-2">
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.08] text-[11px] text-emerald-200/90 shadow-[0_10px_24px_rgba(16,185,129,0.15)]">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-300/80" />
-          Workspace live
-        </div>
-
         <div ref={notifDropdownRef} className="relative">
           <button
             onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
@@ -210,6 +293,69 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </div>
       </div>
       </div>
+
+      {commandPaletteOpen && (
+        <div className="fixed inset-0 z-[70] flex items-start justify-center p-4 pt-24">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in"
+            onClick={() => setCommandPaletteOpen(false)}
+          />
+          <div
+            ref={commandPaletteRef}
+            className="relative w-full max-w-2xl rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(15,23,42,0.82),rgba(2,6,23,0.9))] backdrop-blur-2xl shadow-[0_26px_80px_rgba(2,6,23,0.75)] animate-modal-in overflow-hidden"
+          >
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-800/60">
+              <Command className="w-4 h-4 text-cyan-300" />
+              <input
+                autoFocus
+                value={commandQuery}
+                onChange={(e) => setCommandQuery(e.target.value)}
+                placeholder="Search commands..."
+                className="w-full bg-transparent text-sm text-white placeholder:text-slate-500 focus:outline-none"
+              />
+              <button
+                onClick={() => setCommandPaletteOpen(false)}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800/70 transition-colors"
+                aria-label="Close command palette"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="py-2">
+              {filteredActions.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-slate-500">No matching commands</div>
+              ) : (
+                (Object.keys(groupedActions) as CommandCategory[]).map((category) => (
+                  groupedActions[category].length > 0 ? (
+                    <div key={category} className="mb-1.5 last:mb-0">
+                      <p className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                        {category}
+                      </p>
+                      <div>
+                        {groupedActions[category].map((action) => (
+                          <motion.button
+                            key={action.id}
+                            onClick={() => void executeCommand(action.id)}
+                            whileHover={{ x: 3, scale: 1.005 }}
+                            transition={{ duration: 0.16, ease: 'easeOut' }}
+                            className="w-full px-4 py-2.5 text-left text-sm text-slate-300 hover:bg-slate-800/60 hover:text-white transition-colors flex items-center justify-between"
+                          >
+                            <span>{action.label}</span>
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-white/10 bg-slate-900/70 text-[12px] text-slate-500" aria-hidden="true">
+                              ↵
+                            </span>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
